@@ -116,7 +116,7 @@ a{color:var(--accent)}
       <h1>IPP Power Book</h1>
       <span class="asof">Market data as of 6 Nov 2026</span>
       <span class="asof">Facility sizes from public sources</span>
-      <span class="sample" id="buildBadge">Public data only</span>
+      <span class="sample" id="buildBadge">Public data + AB ratings</span>
     </div>
     <nav id="tabs" aria-label="Dashboard sections">
       <button type="button" class="tab" data-v="map">State map</button>
@@ -283,9 +283,23 @@ const BOOK = {
   ]
 };
 
+/* AB desk ratings (AB scale), from the desk sheet, 8 Nov 2026. Public at Nathan's request (8 Nov 2026). */
+const AB_RATINGS = {
+    ALPGEN:{cur:"BB3", fwd:"BB3", dn:"B2",   up:"BB1"},
+    CEFTB: {cur:"B3",  fwd:"B1",  dn:"CCC1", up:"B1"},
+    CPPTRL:{cur:"B2",  fwd:"B1",  dn:"B3",   up:"BB3"},
+    CPVFAI:{cur:"B3",  fwd:"B1",  dn:"CCC1", up:"BB3"},
+    CPVGEN:{cur:"B2",  fwd:"B1",  dn:"B3",   up:"BB3"},
+    LAENCE:{cur:"B2",  fwd:"B1",  dn:"B3",   up:"BB1"},
+    PATPOW:{cur:"B1",  fwd:"BB3", dn:"B3",   up:"BB2"},
+    SOUFIE:{cur:"B2",  fwd:"B1",  dn:"CCC1", up:"BB3"},
+    TLN:   {cur:"BB2", fwd:"BB2", dn:"BB3",  up:"BB1"},
+    VSTZ:  {cur:"BB1", fwd:"BBB3",dn:"BB3",  up:"BBB3"}
+  };
+
 /* internal data removed from public build */
 const PRIV = (typeof PRIVATE !== "undefined") ? PRIVATE : null;
-if (PRIV) BOOK.credits.forEach(c=>{ Object.assign(c, PRIV.credits[c.id]||{}); c.ab = PRIV.ab[c.id]||null; });
+BOOK.credits.forEach(c=>{ if(PRIV) Object.assign(c, PRIV.credits[c.id]||{}); c.ab = AB_RATINGS[c.id]||null; });
 BOOK.credits.forEach(c=>{ c.held = c.fac.reduce((s,f)=>s+(f.size||0),0); c.tbc = c.fac.some(f=>f.size==null);
   c.policy ??= "No public target"; c.hpolicy ??= (c.seg==="svc"?"n/a (no generation)":"No public hedge policy");
   c.levType ??= null; c.lev ??= null; c.levNote ??= "Not disclosed"; c.hedge ??= null; c.hedgeNote ??= (c.seg==="svc"?"n/a":"Not disclosed");
@@ -589,9 +603,9 @@ function renderRatings(){
   const w=rated.reduce((s,c)=>s+c.held,0)||1;
   const wavg=k=>{ if(!rated.length) return "—"; let s=0; rated.forEach(c=>s+=notch(AB2SP[c.ab[k]])*c.held); return SP2AB[RSCALE[Math.round(s/w)]]||RSCALE[Math.round(s/w)]; };
   const vsMoodys=c=>{ if(!c.ab||!c.agency.mc) return "—"; const d=notch(MOODY[c.agency.mc]||c.agency.mc)-notch(AB2SP[c.ab.cur]); return d<0?`${-d} below`:d>0?`${d} above`:"in line"; };
-  const abCols = PRIV ? '<th>AB current</th><th>AB forward</th><th>AB upside</th><th>AB downside</th><th>AB vs. Moody\'s CFR</th>' : '';
+  const abCols = true ? '<th>AB current</th><th>AB forward</th><th>AB upside</th><th>AB downside</th><th>AB vs. Moody\'s CFR</th>' : '';
   v.innerHTML=`<h2>Ratings</h2>
-  ${PRIV?`<div class="tiles">
+  ${true?`<div class="tiles">
     <div class="tile"><span class="lbl">AB book avg · current</span><span class="v">${wavg("cur")}</span><span class="s">Weighted by term loan size</span></div>
     <div class="tile"><span class="lbl">AB book avg · forward</span><span class="v">${wavg("fwd")}</span><span class="s">Weighted by term loan size</span></div>
     <div class="tile"><span class="lbl">AB book avg · downside</span><span class="v">${wavg("dn")}</span><span class="s">Weighted by term loan size</span></div>
@@ -600,10 +614,10 @@ function renderRatings(){
   <div class="card"><div class="scroll"><table class="wrap">
     <thead><tr><th>Borrower</th><th class="r">TL $mm</th><th>Moody's CFR</th><th>Moody's facility</th><th>S&amp;P issuer</th><th>S&amp;P facility</th><th>S&amp;P recovery</th><th>Fitch</th>${abCols}</tr></thead><tbody>
     ${BOOK.credits.map(c=>{const a=c.agency||{}; const ag=r=>r?`<span class="pill ${a.q==="low"?"unv":""}">${r}</span>`:'<span class="note">—</span>';
-      const abc = PRIV ? (c.ab?`<td>${rPill(c.ab.cur,"ab")}</td><td>${rPill(c.ab.fwd,"ab")}</td><td>${rPill(c.ab.up,"ab")}</td><td>${rPill(c.ab.dn,"ab")}</td><td class="num">${vsMoodys(c)}</td>`:'<td colspan="5" class="note">Not on the AB ratings sheet</td>') : '';
+      const abc = true ? (c.ab?`<td>${rPill(c.ab.cur,"ab")}</td><td>${rPill(c.ab.fwd,"ab")}</td><td>${rPill(c.ab.up,"ab")}</td><td>${rPill(c.ab.dn,"ab")}</td><td class="num">${vsMoodys(c)}</td>`:'<td colspan="5" class="note">Not on the AB ratings sheet</td>') : '';
       return `<tr><td>${c.name}</td><td class="num">${c.held?fmt(c.held):"tbc"}</td><td>${ag(a.mc)}</td><td>${ag(a.mt)}</td><td>${ag(a.si)}</td><td>${ag(a.sf)}</td><td class="num">${a.rec||"—"}</td><td>${ag(a.f)}</td>${abc}</tr>`;}).join("")}
     </tbody></table></div>
-    <p class="note">Agency ratings for the power names are from the desk's Bloomberg pull (8 Nov 2026). Vistra Zero's Fitch BB is its term loan rating (Feb 2025). Centuri and Asplundh are not on that sheet: their ratings (dashed outline) come from older secondary sources and need checking. S&amp;P recovery shows the recovery rating with the estimated recovery in brackets.${PRIV?" AB ratings use the AB scale (BB3 ≈ BB-, B1 ≈ B+, CCC1 ≈ CCC+). Averages convert to that scale and weight by term loan size.":""}</p></div>`;
+    <p class="note">Agency ratings for the power names are from the desk's Bloomberg pull (8 Nov 2026). Vistra Zero's Fitch BB is its term loan rating (Feb 2025). Centuri and Asplundh are not on that sheet: their ratings (dashed outline) come from older secondary sources and need checking. S&amp;P recovery shows the recovery rating with the estimated recovery in brackets.${true?" AB ratings use the AB scale (BB3 ≈ BB-, B1 ≈ B+, CCC1 ≈ CCC+). Averages convert to that scale and weight by term loan size.":""}</p></div>`;
 }
 
 /* ===================== capacity tab ===================== */
@@ -792,7 +806,7 @@ function renderWatch(){
 /* ===================== routing ===================== */
 const VIEWS={"map":renderMapView,"exposure":renderExposure,"ratings":renderRatings,"capacity":renderCapacity,"hedging":renderHedging,"leverage":renderLeverage,"political":renderPolitical,"data-centers":renderDC,"watchlist":renderWatch};
 const rendered=new Set();
-try{ if(PRIV){ const b=document.getElementById("buildBadge"); b.textContent="Internal · AB ratings + Moody's data"; } }catch(_){}
+try{ if(PRIV){ const b=document.getElementById("buildBadge"); b.textContent="Internal · includes Moody's data"; } }catch(_){}
 function show(k){
   if(!VIEWS[k]) k="map";
   for(const id of Object.keys(VIEWS)) $("#v-"+id).hidden = id!==k;
