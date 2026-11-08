@@ -1,0 +1,816 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="claude:viewport-fit-sides" content="cover">
+<meta name="robots" content="noindex, nofollow">
+<title>IPP Power Book</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;600;700;800&family=Source+Sans+3:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: sticky header + tab rail; Map tab = tile-grid map left, state drawer right; other tabs = summary strip then detail tables */
+:root{
+  --bg:#f3f5f6; --panel:#ffffff; --ink:#132029; --muted:#5b6b75; --line:#d9e0e4; --soft:#e9eef1;
+  --accent:#0d6b86; --accent-ink:#ffffff; --amber:#b7791f;
+  --good:#2f7d4f; --warn:#b7791f; --bad:#b4413a;
+  --dem:#2f62b5; --rep:#c0423b; --neutral:#8a979f;
+  --s0:#eef3f5; --s1:#cfe2e8; --s2:#9cc6d3; --s3:#5ea3b8; --s4:#2b7b96; --s5:#0d4f66;
+  --f-display:"Archivo","Helvetica Neue",Arial,sans-serif;
+  --f-body:"Source Sans 3","Segoe UI",system-ui,sans-serif;
+  --f-mono:"JetBrains Mono",ui-monospace,Menlo,monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#0f171c; --panel:#162128; --ink:#e3eaee; --muted:#93a3ad; --line:#2a3943; --soft:#1d2a32;
+  --accent:#4fb3cf; --accent-ink:#0b1418; --amber:#e0a84a;
+  --good:#5cb880; --warn:#e0a84a; --bad:#e07069;
+  --dem:#6b97e0; --rep:#e0756e; --neutral:#6d7b84;
+  --s0:#1b2830; --s1:#1d4050; --s2:#21607a; --s3:#2b86a3; --s4:#4fb3cf; --s5:#9fdcec;
+  color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0f171c; --panel:#162128; --ink:#e3eaee; --muted:#93a3ad; --line:#2a3943; --soft:#1d2a32;
+  --accent:#4fb3cf; --accent-ink:#0b1418; --amber:#e0a84a;
+  --good:#5cb880; --warn:#e0a84a; --bad:#e07069;
+  --dem:#6b97e0; --rep:#e0756e; --neutral:#6d7b84;
+  --s0:#1b2830; --s1:#1d4050; --s2:#21607a; --s3:#2b86a3; --s4:#4fb3cf; --s5:#9fdcec;
+  color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:15px;line-height:1.45;margin:0}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:10;background:var(--panel)}
+.wrap{padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));max-width:1320px;margin:0 auto}
+header{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:var(--panel);border-bottom:1px solid var(--line)}
+.hdr{display:flex;flex-wrap:wrap;align-items:center;gap:8px 20px;padding-block:12px 0}
+h1{font-family:var(--f-display);font-weight:800;font-size:22px;letter-spacing:-.01em;margin:0}
+.asof{font-family:var(--f-mono);font-size:12px;color:var(--muted)}
+.sample{font-family:var(--f-mono);font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--amber);border:1px dashed var(--amber);padding:2px 8px;border-radius:3px}
+nav{display:flex;gap:2px;overflow-x:auto;scrollbar-width:none;margin-top:8px}
+nav .tab{background:none;border:0;border-radius:0;cursor:pointer;font-family:var(--f-display);font-weight:600;font-size:14px;color:var(--muted);text-decoration:none;padding:9px 12px;border-bottom:3px solid transparent;white-space:nowrap}
+nav .tab:hover{color:var(--ink)}
+nav .tab[aria-current="page"]{color:var(--accent);border-bottom-color:var(--accent)}
+nav .tab:focus-visible,button:focus-visible,select:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+main{padding-block:20px 48px}
+section.view{display:flex;flex-direction:column;gap:20px}
+[hidden]{display:none!important}
+h2{font-family:var(--f-display);font-weight:700;font-size:19px;margin:0;text-wrap:balance}
+h3{font-family:var(--f-display);font-weight:700;font-size:15px;margin:0}
+.lbl{font-size:11.5px;letter-spacing:.07em;text-transform:uppercase;color:var(--muted);font-weight:600}
+.num{font-family:var(--f-mono);font-variant-numeric:tabular-nums}
+.tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:12px}
+.tile{background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:12px 14px;display:flex;flex-direction:column;gap:4px}
+.tile .v{font-family:var(--f-mono);font-size:22px;font-weight:500}
+.tile .s{font-size:12.5px;color:var(--muted)}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:16px;display:flex;flex-direction:column;gap:12px;min-width:0}
+.grid2{display:grid;grid-template-columns:minmax(0,1.55fr) minmax(0,1fr);gap:20px}
+@media (max-width:900px){.grid2{grid-template-columns:1fr}}
+.scroll{overflow-x:auto}
+table{border-collapse:collapse;width:100%;font-size:13.5px}
+th{font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);font-weight:600;text-align:left;padding:7px 8px;border-bottom:1px solid var(--line);white-space:nowrap;background:var(--panel);cursor:default}
+th.r,td.r{text-align:right}
+table.wrap th{white-space:normal;vertical-align:bottom}
+td{padding:7px 8px;border-bottom:1px solid var(--soft);vertical-align:top}
+td.num,th.num{text-align:right}
+tr.grp td{background:var(--soft);font-weight:600}
+tbody tr:hover td{background:var(--soft)}
+.pill{display:inline-block;font-family:var(--f-mono);font-size:11.5px;padding:1px 7px;border-radius:10px;border:1px solid var(--line);white-space:nowrap}
+.pill.good{color:var(--good);border-color:var(--good)}
+.pill.warn{color:var(--warn);border-color:var(--warn)}
+.pill.bad{color:var(--bad);border-color:var(--bad)}
+.pill.dem{color:var(--dem);border-color:var(--dem)}
+.pill.rep{color:var(--rep);border-color:var(--rep)}
+.pill.unv{border-style:dashed;color:var(--muted)}
+.controls{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+.seg button{font-family:var(--f-body);font-size:13px;font-weight:600;background:var(--panel);color:var(--muted);border:1px solid var(--line);padding:6px 11px;cursor:pointer}
+.seg button:first-child{border-radius:4px 0 0 4px}.seg button:last-child{border-radius:0 4px 4px 0}
+.seg button+button{margin-left:-1px}
+.seg button[aria-pressed="true"]{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+.seg{display:flex;flex-wrap:wrap}
+svg text{font-family:var(--f-mono)}
+.map svg{width:100%;height:auto;display:block}
+.st rect{stroke:var(--panel);stroke-width:2;cursor:pointer;transition:opacity .15s}
+.st:hover rect{opacity:.82}
+.st.sel rect{stroke:var(--ink);stroke-width:2.5}
+.st .ring{fill:none;stroke:var(--amber);stroke-width:2.5;pointer-events:none}
+.legend{display:flex;flex-wrap:wrap;gap:12px;align-items:center;font-size:12.5px;color:var(--muted)}
+.sw{display:inline-block;width:14px;height:10px;border-radius:2px;margin-right:4px;vertical-align:-1px}
+.kv{display:grid;grid-template-columns:auto 1fr;gap:4px 14px;font-size:14px}
+.kv dt{color:var(--muted)}.kv dd{margin:0;font-family:var(--f-mono);font-size:13px}
+.note{font-size:13px;color:var(--muted);max-width:75ch}
+.prose{max-width:72ch;display:flex;flex-direction:column;gap:10px}
+.prose p,.prose ul{margin:0}
+.prose li{margin-bottom:5px}
+.bar{height:8px;background:var(--soft);border-radius:4px;overflow:hidden;min-width:60px}
+.bar>i{display:block;height:100%;background:var(--accent)}
+.hb{display:flex;gap:3px;align-items:flex-end;height:36px}
+.hb i{display:block;width:14px;background:var(--accent);border-radius:2px 2px 0 0}
+.chip-row{display:flex;flex-wrap:wrap;gap:6px}
+.edit{border-left:3px solid var(--amber);padding-left:12px}
+a{color:var(--accent)}
+.src li{font-size:13px}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+<header>
+  <div class="wrap">
+    <div class="hdr">
+      <h1>IPP Power Book</h1>
+      <span class="asof">Market data as of 6 Nov 2026</span>
+      <span class="asof">Facility sizes from public sources</span>
+      <span class="sample" title="Desk ratings on the Ratings tab are drafts from public data and have not been approved.">Draft ratings · not desk-approved</span>
+    </div>
+    <nav id="tabs" aria-label="Dashboard sections">
+      <button type="button" class="tab" data-v="map">State map</button>
+      <button type="button" class="tab" data-v="exposure">Exposure</button>
+      <button type="button" class="tab" data-v="ratings">Ratings</button>
+      <button type="button" class="tab" data-v="capacity">Capacity auctions</button>
+      <button type="button" class="tab" data-v="hedging">Hedging</button>
+      <button type="button" class="tab" data-v="leverage">Leverage</button>
+      <button type="button" class="tab" data-v="political">Political</button>
+      <button type="button" class="tab" data-v="data-centers">Data centers</button>
+      <button type="button" class="tab" data-v="watchlist">Watchlist</button>
+    </nav>
+  </div>
+</header>
+
+<main class="wrap">
+  <section class="view" id="v-map"></section>
+  <section class="view" id="v-exposure" hidden></section>
+  <section class="view" id="v-ratings" hidden></section>
+  <section class="view" id="v-capacity" hidden></section>
+  <section class="view" id="v-hedging" hidden></section>
+  <section class="view" id="v-leverage" hidden></section>
+  <section class="view" id="v-political" hidden></section>
+  <section class="view" id="v-data-centers" hidden></section>
+  <section class="view" id="v-watchlist" hidden></section>
+</main>
+
+<script>
+/* =====================================================================
+   BOOK — names in the loan book, sized by public term loan facility size.
+   No internal holdings on this page (pending compliance sign-off).
+   fac: size $mm (null = not found), mat = maturity year, sp = spread, src = source.
+   agency: public ratings found; q:"low" = from a secondary/aggregator source, verify on RATC.
+   ours: DRAFT desk ratings proposed by Claude from public data — not desk-approved.
+   lev / dscr / debtKW / hedge: public figures only; notes explain gaps.
+   Asset exposure = issuer's facility size split pro-rata by MW (plants with MW only).
+   ===================================================================== */
+const BOOK = {
+  credits: [
+    {id:"TLN", name:"Talen Energy Supply", seg:"gen", fleet:true, fac:[
+      {n:"TLB-3 (Oct 2025 incremental)", size:1191, mat:2032, sp:"S+200", src:"Talen 10-Q Q3'26; Ares 10-Q"},
+      {n:"TLB-1", size:842, mat:2032, sp:"S+175", src:"Talen 10-Q Q3'26 (extended from May 2030)"},
+      {n:"TLB-2", size:835, mat:2031, sp:"S+175", src:"Talen 10-Q Q3'26; repriced May 2026"}],
+     agency:{m:"Baa3", s:"BB", f:null, q:"mixed", note:"S&P BB secured / BB- issuer, stable (Talen deck, Feb 2026). Moody's secured upgraded to Baa3, CFR Ba3 stable (Apr 2026, via aggregator)."},
+     ours:{cur:"BB+", fwd:"BB+", up:"BBB-", dn:"BB-", rec:"RR2", conf:"Med",
+       why:"Nuclear PTC floor and 70% of 2027 generation hedged; $1.5bn of 2027–29 capacity cash already monetized. Held below Moody's Baa3 until leverage reaches the 3.5x target (now 2H27)."},
+     lev:4.5, levType:"Gross", levNote:"Total debt $9.57bn (9/30/26) / 2026E adj. EBITDA midpoint $2,125mm; computed", policy:"Target 3.5x net debt / adj. EBITDA; company now expects to reach it in 2H27", dscr:null, debtKW:730, kwNote:"Total debt ~$9.57bn / 13.1 GW owned (10-K)",
+     hedge:[80,70,35], hedgeNote:"% of expected generation (incl. nuclear PTC), Q4'26 / 2027 / 2028, at 9/30/26", hpolicy:"No stated target ratio found. Also monetized ~$1.5bn of 2027–29 PJM capacity cash flows (Oct 2026)",
+     ebitda:2125, ebitdaNote:"2026E adj. EBITDA midpoint ($2,050–2,200mm guidance)", debt:9570,
+     cfi:"Nuclear PTC floor (45U) + Amazon PPA at Susquehanna"},
+    {id:"PATPOW", name:"Pathfinder Power (LS Power)", seg:"gen", fleet:false, fac:[
+      {n:"7-yr TLB (LBO of Constellation PJM plants)", size:2500, mat:2033, sp:"S+200", src:"Bloomberg Tax (launch); fund schedules (final terms)"}],
+     agency:{m:null, s:null, f:null, q:"none", note:"Unrated at launch per Octus (Apr 2026); no later rating found."},
+     ours:{cur:"BB-", fwd:"BB-", up:"BB", dn:"B+", rec:"RR2", conf:"Low",
+       why:"4.3 GW of MAAC/DPL gas at ~$580/kW; five plants spread outage risk. Merchant LBO with no public hedge or leverage data; capacity at cap supports near-term coverage."},
+     lev:null, levNote:"Not disclosed", dscr:null, debtKW:580, kwNote:"$2.5bn / 4.34 GW", hedge:null, hedgeNote:"Not disclosed",
+     cfi:"4.3 GW PJM gas divested by Constellation after Calpine deal"},
+    {id:"ALPGEN", name:"Alpha Generation", seg:"gen", fleet:true, fac:[
+      {n:"Term loans (2031 TLB + 2033 tranche)", size:2220, mat:null, sp:"S+175", src:"White & Case (Jan 2026 repricing); fund schedules. Split by tranche not found"}],
+     agency:{m:null, s:"BB+", f:null, q:"low", note:"S&P term loan BB+ (28 May 2026), seen only via a repost; verify. Issuer rating and outlook not found."},
+     ours:{cur:"BB", fwd:"BB", up:"BB+", dn:"BB-", rec:"RR2", conf:"Low",
+       why:"11–13 GW across PJM, NYISO Zone J, ISO-NE and CAISO gives diversity, but S&P has adjusted leverage ~4.6x in 2026. One notch below S&P until that is verified."},
+     lev:4.6, levType:"S&P adj.", levNote:"S&P-adjusted debt / EBITDA, 2026E (secondary source)", policy:"None public (private, ArcLight-owned)", dscr:null, debtKW:null, kwNote:"Fleet MW not fully disclosed", hedge:null, hedgeNote:"Not disclosed",
+     cfi:"Multi-ISO gas/oil fleet (ArcLight; CPP Investments minority)"},
+    {id:"SOUFIE", name:"South Field Energy", seg:"gen", fleet:false, fac:[
+      {n:"TLB", size:695, mat:2031, sp:"S+300", src:"Fund schedules (Columbia, Kennedy Lewis)"},
+      {n:"TLC", size:43, mat:2031, sp:"S+300", src:"Fund schedules"}],
+     agency:{m:"Ba3", s:null, f:null, q:"low", note:"Moody's Ba3 senior secured, stable, affirmed on a $50mm upsize (via aggregator; date not found)."},
+     ours:{cur:"BB-", fwd:"BB-", up:"BB", dn:"B+", rec:"RR2", conf:"Med",
+       why:"Modern 1.18 GW CCGT in ATSI at ~$625/kW. In line with Moody's; Ohio data-center politics and an uncapped 2030/31 auction drive the downside."},
+     lev:null, levNote:"Not disclosed", dscr:null, debtKW:624, kwNote:"$738mm / 1,182 MW", hedge:null, hedgeNote:"Not disclosed",
+     cfi:"Single-asset CCGT, ATSI zone"},
+    {id:"CPPTRL", name:"Three Rivers (CPV Three Rivers LLC)", seg:"gen", fleet:false, fac:[
+      {n:"TLB (Apr 2026 refi)", size:null, mat:2033, sp:"S+275", src:"Kenon 6-K; fund schedules. Size not found (2020 term loan was $750mm)"}],
+     agency:{m:null, s:null, f:null, q:"none", note:"No rating found."},
+     ours:{cur:"BB-", fwd:"BB-", up:"BB", dn:"B+", rec:"RR2", conf:"Low",
+       why:"1.26 GW CCGT in ComEd, which had the highest uncapped capacity price in the 2028/29 simulation. CPV exited in May 2026; new owner not identified."},
+     lev:null, levNote:"Not disclosed", dscr:null, debtKW:null, kwNote:"Facility size not found", hedge:null, hedgeNote:"Not disclosed",
+     cfi:"Single-asset CCGT, ComEd zone; CPV swapped out in May 2026"},
+    {id:"CPVGEN", name:"CPV Generation Holdings", seg:"gen", fleet:false, fac:[
+      {n:"7-yr TLB (Shore + Maryland)", size:625, mat:2033, sp:"S+250", src:"OPC / CPV press release, 29 Oct 2026"}],
+     agency:{m:null, s:null, f:null, q:"none", note:"No current rating found (old CPV Maryland Ba3 2021, CPV Shore Ba2 2019)."},
+     ours:{cur:"BB", fwd:"BB", up:"BB+", dn:"BB-", rec:"RR1", conf:"Med",
+       why:"Two PJM CCGTs at ~$425/kW, the lowest in the book. Both plants sit at the low end of the sweep grid. The ~$130mm dividend recap is a negative for policy."},
+     lev:null, levNote:"Not disclosed", policy:"Leverage-based cash sweep of 0–50%; both plants at the low end of the grid (OPC)", dscr:null, debtKW:425, kwNote:"$625mm / 1,470 MW",
+     hedge:null, hedgeNote:"Borrower-level ratios not disclosed", hpolicy:"CPV group hedges most near-term output: ~71% of Apr–Dec 2026 generation hedged, ~91% of capacity revenue secured (group level)",
+     cfi:"HoldCo over CPV Shore (NJ) and CPV Maryland (MD)"},
+    {id:"CTRI", name:"Centuri Group", seg:"svc", fleet:false, fac:[
+      {n:"Term loan", size:616, mat:2032, sp:"S+200", src:"Centuri 10-Q Q3'26 (outstanding at 9/27/26)"}],
+     agency:{m:null, s:"B+", f:null, q:"low", note:"S&P B+ issuer and term loan, RR3, stable (2025, via repost). Moody's not verified."},
+     ours:{cur:"BB-", fwd:"BB-", up:"BB", dn:"B+", rec:"RR3", conf:"Med",
+       why:"Net leverage down to 2.6x from 3.8x a year ago on strong utility capex backlog. One notch above S&P's 2025 rating, which predates the deleveraging."},
+     lev:2.6, levType:"Net", levNote:"Net debt / adj. EBITDA at 9/27/26 (company)", policy:"Low-2x by YE26; long-term goal below 2.0x (Q3'26 call). Covenant max 4.0x", ebitda:295, ebitdaNote:"2026E adj. EBITDA midpoint ($290–300mm guidance)", dscr:null, debtKW:null, kwNote:"n/a", hedge:null, hedgeNote:"n/a",
+     cfi:"Utility services contractor"},
+    {id:"CPVFAI", name:"CPV Fairview", seg:"gen", fleet:false, fac:[
+      {n:"TLB", size:550, mat:2031, sp:"S+250", src:"OPC/Kenon; fund schedules"}],
+     agency:{m:null, s:null, f:null, q:"none", note:"No rating found."},
+     ours:{cur:"BB-", fwd:"BB-", up:"BB", dn:"B+", rec:"RR2", conf:"Low",
+       why:"1.05 GW CCGT in PENELEC at ~$525/kW. The refinancing paid a ~$257mm distribution. CPV owns only 25%."},
+     lev:null, levNote:"Not disclosed", dscr:null, debtKW:524, kwNote:"$550mm / 1,050 MW", hedge:null, hedgeNote:"Not disclosed",
+     cfi:"Single-asset CCGT, PENELEC zone"},
+    {id:"LAENCE", name:"Lackawanna Energy Center", seg:"gen", fleet:false, fac:[
+      {n:"TLB", size:null, mat:2032, sp:"S+275", src:"Fund schedules; size not found"}],
+     agency:{m:null, s:null, f:null, q:"none", note:"No rating found."},
+     ours:{cur:"BB-", fwd:"BB-", up:"BB", dn:"B+", rec:"RR2", conf:"Low",
+       why:"1.48 GW CCGT in PPL, on Marcellus gas. Placeholder pending facility size and leverage."},
+     lev:null, levNote:"Not disclosed", dscr:null, debtKW:null, kwNote:"Facility size not found", hedge:null, hedgeNote:"Not disclosed",
+     cfi:"Single-asset CCGT, PPL zone (Invenergy / First Reserve / BlackRock)"},
+    {id:"CEFTB", name:"Clean Energy Future-Trumbull", seg:"gen", fleet:false, fac:[
+      {n:"TLB", size:null, mat:2033, sp:"S+300", src:"Fund schedules; size not found"}],
+     agency:{m:null, s:null, f:null, q:"none", note:"No rating found."},
+     ours:{cur:"B+", fwd:"BB-", up:"BB-", dn:"B", rec:"RR2", conf:"Low",
+       why:"~950 MW CCGT in ATSI; widest spread among the single assets (S+300). The 2022 revenue put may not have survived the 2026 refinancing."},
+     lev:null, levNote:"Not disclosed", dscr:null, debtKW:null, kwNote:"Facility size not found", hedge:null, hedgeNote:"Not disclosed", hpolicy:"2022 financing had a 5-yr revenue put (floor on revenue); status after the 2026 refi not found",
+     cfi:"Single-asset CCGT, ATSI zone"},
+    {id:"ASPTRE", name:"Asplundh Tree Expert", seg:"svc", fleet:false, fac:[
+      {n:"TLB", size:null, mat:2033, sp:"S+175", src:"Fund schedules; refinanced ~May 2026; size not found"}],
+     agency:{m:"Ba1", s:null, f:null, q:"low", note:"Moody's Ba1 CFR and secured, stable (Aug 2020, via repost). Likely stale."},
+     ours:{cur:"BB+", fwd:"BB+", up:"BBB-", dn:"BB", rec:"RR2", conf:"Low",
+       why:"Family-owned vegetation-management leader with conservative policy, priced at S+175. Anchored to an old Moody's rating pending a current one."},
+     lev:null, levNote:"Not disclosed", dscr:null, debtKW:null, kwNote:"n/a", hedge:null, hedgeNote:"n/a",
+     cfi:"Utility vegetation management (private)"}
+  ],
+  /* Plants: confirm locations / MW. st:null = not mapped to a state (shown as unallocated). mw:0 = MW not found (gets no allocation). */
+  assets: [
+    {c:"TLN", n:"Susquehanna (90% share)", st:"PA", iso:"PJM", z:"PPL", tech:"Nuclear", mw:2245},
+    {c:"TLN", n:"Guernsey", st:"OH", iso:"PJM", z:"AEP", tech:"CCGT", mw:1771},
+    {c:"TLN", n:"Martins Creek", st:"PA", iso:"PJM", z:"PPL", tech:"Dual-fuel ST", mw:1710},
+    {c:"TLN", n:"Montour", st:"PA", iso:"PJM", z:"PPL", tech:"Gas ST", mw:1505},
+    {c:"TLN", n:"Brunner Island", st:"PA", iso:"PJM", z:"PPL", tech:"Dual-fuel ST", mw:1419},
+    {c:"TLN", n:"Brandon Shores (RMR to May 2029)", st:"MD", iso:"PJM", z:"BGE", tech:"Coal", mw:1273},
+    {c:"TLN", n:"Freedom", st:"PA", iso:"PJM", z:"PPL", tech:"CCGT", mw:1049},
+    {c:"TLN", n:"H.A. Wagner (RMR to May 2029)", st:"MD", iso:"PJM", z:"BGE", tech:"Oil ST", mw:702},
+    {c:"TLN", n:"Lower Mount Bethel", st:"PA", iso:"PJM", z:"PPL", tech:"CCGT", mw:607},
+    {c:"TLN", n:"Keystone (share)", st:"PA", iso:"PJM", z:"PENELEC", tech:"Coal", mw:213},
+    {c:"TLN", n:"Other (Conemaugh share, peakers)", st:null, iso:"PJM", z:"", tech:"Other", mw:614},
+    {c:"PATPOW", n:"Bethlehem", st:"PA", iso:"PJM", z:"MAAC", tech:"CCGT", mw:1100},
+    {c:"PATPOW", n:"York 1", st:"PA", iso:"PJM", z:"MAAC", tech:"CCGT", mw:570},
+    {c:"PATPOW", n:"York 2", st:"PA", iso:"PJM", z:"MAAC", tech:"CCGT", mw:830},
+    {c:"PATPOW", n:"Hay Road", st:"DE", iso:"PJM", z:"DPL", tech:"CCGT", mw:1140},
+    {c:"PATPOW", n:"Edge Moor", st:"DE", iso:"PJM", z:"DPL", tech:"Gas ST", mw:700},
+    {c:"ALPGEN", n:"Lordstown", st:"OH", iso:"PJM", z:"ATSI", tech:"CCGT", mw:940},
+    {c:"ALPGEN", n:"Middletown (OH)", st:"OH", iso:"PJM", z:"DEOK", tech:"CCGT", mw:483},
+    {c:"ALPGEN", n:"Brandywine", st:"MD", iso:"PJM", z:"Pepco", tech:"CCGT", mw:290},
+    {c:"ALPGEN", n:"Keys", st:"MD", iso:"PJM", z:"Pepco", tech:"CCGT", mw:0},
+    {c:"ALPGEN", n:"Bergen", st:"NJ", iso:"PJM", z:"PSEG", tech:"CCGT", mw:0},
+    {c:"ALPGEN", n:"Burlington", st:"NJ", iso:"PJM", z:"PSEG", tech:"CT", mw:0},
+    {c:"ALPGEN", n:"Kearny", st:"NJ", iso:"PJM", z:"PSEG", tech:"CT", mw:0},
+    {c:"ALPGEN", n:"Linden", st:"NJ", iso:"PJM", z:"PSEG", tech:"CCGT", mw:0},
+    {c:"ALPGEN", n:"Sewaren", st:"NJ", iso:"PJM", z:"PSEG", tech:"CT", mw:0},
+    {c:"ALPGEN", n:"Arthur Kill", st:"NY", iso:"NYISO", z:"Zone J", tech:"Gas ST", mw:878},
+    {c:"ALPGEN", n:"Astoria", st:"NY", iso:"NYISO", z:"Zone J", tech:"Gas ST", mw:935},
+    {c:"ALPGEN", n:"Gowanus", st:"NY", iso:"NYISO", z:"Zone J", tech:"CT", mw:260},
+    {c:"ALPGEN", n:"Narrows", st:"NY", iso:"NYISO", z:"Zone J", tech:"CT", mw:322},
+    {c:"ALPGEN", n:"Bethlehem (NY)", st:"NY", iso:"NYISO", z:"Zone F", tech:"CCGT", mw:900},
+    {c:"ALPGEN", n:"Oswego", st:"NY", iso:"NYISO", z:"Zone C", tech:"Oil ST", mw:1641},
+    {c:"ALPGEN", n:"Bridgeport", st:"CT", iso:"ISO-NE", z:"CT", tech:"CCGT", mw:500},
+    {c:"ALPGEN", n:"Kleen", st:"CT", iso:"ISO-NE", z:"CT", tech:"CCGT", mw:620},
+    {c:"ALPGEN", n:"Middletown (CT)", st:"CT", iso:"ISO-NE", z:"CT", tech:"Gas / oil ST", mw:762},
+    {c:"ALPGEN", n:"Montville", st:"CT", iso:"ISO-NE", z:"CT", tech:"Gas / oil ST", mw:500},
+    {c:"ALPGEN", n:"New Haven Harbor", st:"CT", iso:"ISO-NE", z:"CT", tech:"Gas / oil ST", mw:575},
+    {c:"ALPGEN", n:"Devon", st:"CT", iso:"ISO-NE", z:"CT", tech:"CT", mw:175},
+    {c:"ALPGEN", n:"CT Jets", st:"CT", iso:"ISO-NE", z:"CT", tech:"CT", mw:167},
+    {c:"ALPGEN", n:"Long Beach", st:"CA", iso:"CAISO", z:"SP15", tech:"CT", mw:252},
+    {c:"SOUFIE", n:"South Field", st:"OH", iso:"PJM", z:"ATSI", tech:"CCGT", mw:1182},
+    {c:"CPVFAI", n:"Fairview", st:"PA", iso:"PJM", z:"PENELEC", tech:"CCGT", mw:1050},
+    {c:"CPPTRL", n:"Three Rivers", st:"IL", iso:"PJM", z:"ComEd", tech:"CCGT", mw:1258},
+    {c:"CPVGEN", n:"CPV Shore (Woodbridge)", st:"NJ", iso:"PJM", z:"PSEG", tech:"CCGT", mw:725},
+    {c:"CPVGEN", n:"CPV Maryland (St. Charles)", st:"MD", iso:"PJM", z:"Pepco", tech:"CCGT", mw:745},
+    {c:"LAENCE", n:"Lackawanna", st:"PA", iso:"PJM", z:"PPL", tech:"CCGT", mw:1485},
+    {c:"CEFTB", n:"Trumbull", st:"OH", iso:"PJM", z:"ATSI", tech:"CCGT", mw:950},
+    {c:"CTRI", n:"Utility services (US-wide)", st:null, iso:"n/a", z:"", tech:"Utility services", mw:0},
+    {c:"ASPTRE", n:"Utility services (US-wide)", st:null, iso:"n/a", z:"", tech:"Utility services", mw:0}
+  ]
+};
+BOOK.credits.forEach(c=>{ c.held = c.fac.reduce((s,f)=>s+(f.size||0),0); c.tbc = c.fac.some(f=>f.size==null);
+  c.policy ??= "No public target"; c.hpolicy ??= (c.seg==="svc"?"n/a (no generation)":"No public hedge policy"); c.levType ??= null;
+  c.ebitda ??= null; c.ebitdaNote ??= "Not public"; c.debt ??= (c.held||null); });
+
+/* ===== Recent facility events (public sources) ===== */
+const EVENTS = [
+  {d:"2026-10-27", c:"CPVGEN", t:"Signed $825mm package: $625mm 7-yr TLB at S+250 (75bp tighter), $125mm LC, $75mm RCF. Refinances Shore and Maryland; ~$130mm dividend to CPV."},
+  {d:"2026-07-01", lbl:"Jul 2026", c:"SOUFIE", t:"Strategic Value Partners agreed to buy a minority equity stake (terms undisclosed)."},
+  {d:"2026-06-15", lbl:"Jun 2026", c:"PATPOW", t:"Launched $2.5bn 7-yr TLB at S+200–225, OID 99.5; priced at S+200, due Jun 2033. Funds LS Power's ~$5bn purchase of 4.4 GW of PJM gas plants from Constellation."},
+  {d:"2026-10-01", c:"TLN", t:"Monetized ~$1.5bn of 2027/28–2028/29 PJM capacity cash flows."},
+  {d:"2026-05-20", c:"TLN", t:"Repriced TLB-1 ($842mm) and TLB-2 ($835mm) to S+175; TLB-1 extended from May 2030 to Nov 2032."},
+  {d:"2026-05-01", lbl:"May 2026", c:"CPPTRL", t:"CPV swapped its 10% Three Rivers stake for the remaining 25% of CPV Maryland. New Three Rivers TLB (S+275, 2033) priced in April."},
+  {d:"2026-01-23", c:"ALPGEN", t:"Repriced $2.22bn of term loans and $700mm RCF; ~$5.5mm a year of interest savings."},
+  {d:"2026-01-12", c:"CTRI", t:"Repriced term loan: SOFR margin 2.25% to 2.00%."},
+  {d:"2025-10-06", c:"TLN", t:"Launched $1.2bn incremental TLB (now TLB-3, $1,191mm, S+200, 2032) to fund the Freedom and Guernsey acquisitions."}
+];
+
+/* ===== WATCHLIST — add entries: {c:"ID", status:"action|watch|positive", theme, why, trigger, due} ===== */
+BOOK.watch = [];
+const MARKET_WATCH = [
+  {what:"PJM 2029/30 BRA", when:"Next auction (date tbc)", why:"Last collared auction. A clear below the cap would be the first sign of new supply."},
+  {what:"PJM collar after 2029/30", when:"2027 stakeholder process", why:"Governors in PA, NJ, MD, VA and IL are likely to push for another extension."},
+  {what:"State data-center pauses", when:"2027 legislative sessions", why:"GA, OH and WI governors-elect campaigned on pauses or conditional moratoria."},
+  {what:"FERC large-load / co-location rules", when:"Ongoing", why:"Sets the terms for behind-the-meter deals at our nuclear and CCGT sites."}
+];
+
+/* ===== Market reference: capacity auctions (public results) ===== */
+const PJM_BRA = [
+  {dy:"2024/25", px:28.92, note:"RTO"},
+  {dy:"2025/26", px:269.92, note:"RTO; BGE $466, Dominion $444"},
+  {dy:"2026/27", px:329.17, note:"Cleared at cap"},
+  {dy:"2027/28", px:333.44, note:"Cleared at cap"},
+  {dy:"2028/29", px:325.00, note:"Cleared at cap; 6.8 GW short of target; uncapped sim ~$555"}
+];
+const ELCC = {"Oil ST":0.60,"CT":0.60,"Other":0.60,"Gas / oil ST":0.62,"Nuclear":0.95,"CCGT":0.74,"Gas ST":0.62,"Dual-fuel ST":0.62,"Coal":0.83,"Coal / Gas":0.80,"Gas ST / CCGT":0.70,"Steam / CT":0.60};
+
+/* ===== Data-center load by state (approx GW; desk estimate from public trackers — refresh) =====
+   op = operating GW, pipe = under construction + firm pipeline GW, g = growth signal 0-4 */
+const DC = {
+  VA:{op:12.3,pipe:5.5,g:3,t:"Still largest market by facility count; Dominion large-load tariff and queue limit pace"},
+  TX:{op:11.1,pipe:17.2,g:4,t:"~32% of US capacity under construction; SB6 large-load rules; ERCOT energy-only"},
+  GA:{op:2.6,pipe:6.0,g:4,t:"Georgia Power large-load pipeline; new governor promised a pause"},
+  OH:{op:1.8,pipe:3.6,g:3,t:"AEP Ohio data-center tariff (85% min take); Columbus cluster"},
+  AZ:{op:2.4,pipe:4.0,g:3,t:"Phoenix metro; APS/SRP capacity constrained"},
+  IL:{op:2.0,pipe:2.5,g:3,t:"ComEd zone highest uncapped PJM price in 2028/29 sim"},
+  OR:{op:2.0,pipe:1.2,g:2,t:"Hillsboro / The Dalles"},
+  WA:{op:1.5,pipe:0.6,g:1,t:"Quincy; hydro-backed"},
+  CA:{op:2.4,pipe:0.8,g:1,t:"Santa Clara; slow interconnection"},
+  NV:{op:1.3,pipe:1.5,g:2,t:"Reno / Las Vegas"},
+  PA:{op:0.9,pipe:4.5,g:4,t:"Homer City, Susquehanna campus, Shippingport; Shapiro pushing PJM reform"},
+  NJ:{op:0.8,pipe:0.8,g:1,t:"Legacy colo; affordability politics"},
+  NY:{op:0.8,pipe:0.6,g:1,t:"Upstate crypto-to-AI conversions"},
+  NC:{op:1.0,pipe:1.5,g:2,t:"Duke large-load filings"},
+  SC:{op:0.5,pipe:1.0,g:2,t:""},
+  IA:{op:1.2,pipe:1.0,g:2,t:"Council Bluffs / Des Moines"},
+  NE:{op:0.6,pipe:0.5,g:1,t:""},
+  IN:{op:0.6,pipe:3.0,g:3,t:"New Carlisle (AWS), Fort Wayne; MISO + PJM"},
+  WI:{op:0.3,pipe:2.0,g:3,t:"Mount Pleasant (MSFT), Port Washington; governor-elect backs moratorium"},
+  MI:{op:0.3,pipe:1.0,g:2,t:"Saline Twp (Stargate)"},
+  MN:{op:0.3,pipe:0.6,g:1,t:""},
+  MO:{op:0.3,pipe:0.5,g:1,t:""},
+  TN:{op:0.6,pipe:1.2,g:3,t:"Memphis (xAI Colossus)"},
+  MS:{op:0.3,pipe:1.5,g:3,t:"AWS Madison Co."},
+  LA:{op:0.2,pipe:2.2,g:4,t:"Meta Hyperion, Richland Parish"},
+  OK:{op:0.4,pipe:0.6,g:1,t:""},
+  UT:{op:0.8,pipe:0.8,g:2,t:""},
+  WY:{op:0.2,pipe:1.5,g:2,t:"Cheyenne campuses"},
+  MD:{op:0.3,pipe:1.0,g:2,t:"Quantum Loophole (Frederick)"},
+  WV:{op:0.1,pipe:0.8,g:2,t:"HB2014 microgrid district law"},
+  KY:{op:0.2,pipe:0.6,g:1,t:""},
+  AL:{op:0.3,pipe:0.4,g:1,t:""},
+  CO:{op:0.3,pipe:0.3,g:1,t:""},
+  NM:{op:0.2,pipe:0.4,g:1,t:""},
+  ND:{op:0.3,pipe:0.4,g:1,t:""},
+  SD:{op:0.1,pipe:0.1,g:0,t:""},
+  KS:{op:0.1,pipe:0.2,g:0,t:""},
+  AR:{op:0.1,pipe:0.2,g:0,t:""},
+  FL:{op:0.6,pipe:0.3,g:1,t:""},
+  MA:{op:0.4,pipe:0.1,g:0,t:""},
+  CT:{op:0.1,pipe:0.1,g:0,t:""},
+  DE:{op:0.1,pipe:0.2,g:0,t:""},
+  DC:{op:0.0,pipe:0.0,g:0,t:""},
+  ME:{op:0.0,pipe:0.1,g:0,t:""},
+  NH:{op:0.0,pipe:0.0,g:0,t:""},
+  VT:{op:0.0,pipe:0.0,g:0,t:""},
+  RI:{op:0.0,pipe:0.0,g:0,t:""},
+  ID:{op:0.1,pipe:0.2,g:0,t:""},
+  MT:{op:0.0,pipe:0.2,g:0,t:""},
+  AK:{op:0.0,pipe:0.0,g:0,t:""},
+  HI:{op:0.0,pipe:0.0,g:0,t:""}
+};
+const GROWTH = ["Flat","Modest","Growing","Strong","Very strong"];
+
+/* ===== Political: 3 Nov 2026 midterms (preliminary; AP calls still pending in some races) ===== */
+const POL = {
+  TX:{gov:"Gina Hinojosa", p:"D", flip:true, conf:true, dc:"Flagged by Data Center Watch as the most important result for DC development. Senate: Talarico (D) beat Paxton."},
+  GA:{gov:"Keisha Lance Bottoms", p:"D", flip:true, conf:true, dc:"Promised temporary statewide pause on new DC construction."},
+  OH:{gov:"Amy Acton", p:"D", flip:true, conf:true, dc:"Conditional DC moratorium unless developers cover full utility cost, union labor, environmental standards."},
+  IA:{gov:"Democrat (flip)", p:"D", flip:true, conf:true, dc:""},
+  NV:{gov:"Democrat (flip)", p:"D", flip:true, conf:true, dc:""},
+  WI:{gov:"David Crowley", p:"D", flip:false, conf:true, dc:"Backs moratorium and ending DC sales-tax exemption."},
+  PA:{gov:"Josh Shapiro (inc.) vs. Garrity", p:"D", flip:false, conf:false, dc:"Led by double digits pre-election — confirm AP call. Filed at FERC over PJM price cap; pushing PJM governance reform."},
+  MI:{gov:"Benson (D) vs. James (R)", p:"?", flip:false, conf:false, dc:"Confirm AP call. 4th-highest retail rates in US was a Senate-race issue."},
+  AZ:{gov:"Hobbs (D, inc.) vs. Biggs (R)", p:"D", flip:false, conf:false, dc:"Hobbs led late polling — confirm AP call."},
+  VA:{gov:"Abigail Spanberger (elected 2025)", p:"D", flip:false, conf:true, dc:"Not on 2026 ballot. Affordability / DC cost allocation central to agenda."},
+  NJ:{gov:"Mikie Sherrill (elected 2025)", p:"D", flip:false, conf:true, dc:"Not on 2026 ballot. Ran on freezing utility rates; hostile to PJM status quo."},
+  IL:{gov:"Pritzker (inc.)", p:"D", flip:false, conf:false, dc:"Confirm call. State pushing for PJM exit study / resource adequacy authority."},
+  MD:{gov:"Wes Moore (inc.)", p:"D", flip:false, conf:false, dc:"Confirm call. Next Generation Energy Act — state-procured dispatchable gen."},
+  NY:{gov:"Hochul (inc.)", p:"D", flip:false, conf:false, dc:"Confirm call."}
+};
+
+/* ===================== helpers ===================== */
+const $ = (s,el=document)=>el.querySelector(s);
+const fmt = (n,d=0)=>n.toLocaleString("en-US",{minimumFractionDigits:d,maximumFractionDigits:d});
+const credit = id=>BOOK.credits.find(c=>c.id===id);
+const RSCALE = ["AAA","AA+","AA","AA-","A+","A","A-","BBB+","BBB","BBB-","BB+","BB","BB-","B+","B","B-","CCC+","CCC","CCC-","CC","C","D"];
+const MOODY = {"Baa1":"BBB+","Baa2":"BBB","Baa3":"BBB-","Ba1":"BB+","Ba2":"BB","Ba3":"BB-","B1":"B+","B2":"B","B3":"B-","Caa1":"CCC+","Caa2":"CCC"};
+const notch = r=>RSCALE.indexOf(MOODY[r]||r);
+const isIG = r=>notch(r)>=0 && notch(r)<=9;
+
+// allocate credit exposure to assets pro-rata by MW
+BOOK.credits.forEach(c=>{
+  const a = BOOK.assets.filter(x=>x.c===c.id);
+  const tot = a.reduce((s,x)=>s+x.mw,0);
+  a.forEach(x=>{ x.exp = x.alloc ?? (tot>0 ? c.held * x.mw / tot : c.held / a.length); });
+});
+const TOTAL = BOOK.credits.reduce((s,c)=>s+c.held,0);
+const BYSTATE = {};
+const UNALLOC = BOOK.assets.filter(a=>!a.st).reduce((s,a)=>s+a.exp,0);
+const GEN_TOTAL = BOOK.credits.filter(c=>c.seg==="gen").reduce((s,c)=>s+c.held,0);
+const f1 = n=>fmt(n, n<10?1:0);
+BOOK.assets.filter(a=>a.st).forEach(a=>{
+  const s = BYSTATE[a.st] ||= {exp:0,mw:0,assets:[],credits:new Set()};
+  s.exp+=a.exp; s.mw+=a.mw; s.assets.push(a); s.credits.add(a.c);
+});
+
+/* ===================== tile map ===================== */
+const GRID = {AK:[0,0],ME:[11,0],WI:[6,1],VT:[10,1],NH:[11,1],
+ WA:[1,2],ID:[2,2],MT:[3,2],ND:[4,2],MN:[5,2],IL:[6,2],MI:[7,2],NY:[9,2],MA:[10,2],
+ OR:[1,3],NV:[2,3],WY:[3,3],SD:[4,3],IA:[5,3],IN:[6,3],OH:[7,3],PA:[8,3],NJ:[9,3],CT:[10,3],RI:[11,3],
+ CA:[1,4],UT:[2,4],CO:[3,4],NE:[4,4],MO:[5,4],KY:[6,4],WV:[7,4],VA:[8,4],MD:[9,4],DE:[10,4],
+ AZ:[2,5],NM:[3,5],KS:[4,5],AR:[5,5],TN:[6,5],NC:[7,5],SC:[8,5],DC:[9,5],
+ OK:[4,6],LA:[5,6],MS:[6,6],AL:[7,6],GA:[8,6],HI:[0,7],TX:[4,7],FL:[9,7]};
+const NAMES={AL:"Alabama",AK:"Alaska",AZ:"Arizona",AR:"Arkansas",CA:"California",CO:"Colorado",CT:"Connecticut",DE:"Delaware",DC:"District of Columbia",FL:"Florida",GA:"Georgia",HI:"Hawaii",ID:"Idaho",IL:"Illinois",IN:"Indiana",IA:"Iowa",KS:"Kansas",KY:"Kentucky",LA:"Louisiana",ME:"Maine",MD:"Maryland",MA:"Massachusetts",MI:"Michigan",MN:"Minnesota",MS:"Mississippi",MO:"Missouri",MT:"Montana",NE:"Nebraska",NV:"Nevada",NH:"New Hampshire",NJ:"New Jersey",NM:"New Mexico",NY:"New York",NC:"North Carolina",ND:"North Dakota",OH:"Ohio",OK:"Oklahoma",OR:"Oregon",PA:"Pennsylvania",RI:"Rhode Island",SC:"South Carolina",SD:"South Dakota",TN:"Tennessee",TX:"Texas",UT:"Utah",VT:"Vermont",VA:"Virginia",WA:"Washington",WV:"West Virginia",WI:"Wisconsin",WY:"Wyoming"};
+
+let metric = "exp", selState = "PA";
+const METRICS = {
+  exp:{label:"Term loan exposure ($mm)", val:s=>BYSTATE[s]?.exp||0, stops:[0,1,300,700,1500,3000]},
+  op:{label:"DC operating (GW)", val:s=>DC[s]?.op||0, stops:[0,0.2,0.6,1.5,3,8]},
+  pipe:{label:"DC pipeline (GW)", val:s=>DC[s]?.pipe||0, stops:[0,0.2,0.8,1.5,3,6]},
+  g:{label:"DC growth signal", val:s=>DC[s]?.g||0, stops:[0,1,2,3,4,99]},
+  pol:{label:"Governor (2026 result)"}
+};
+const SHADES=["--s0","--s1","--s2","--s3","--s4","--s5"];
+function fillFor(st){
+  if(metric==="pol"){ const p=POL[st]; if(!p) return "var(--s0)"; return p.p==="D"?"var(--dem)":p.p==="R"?"var(--rep)":"var(--neutral)"; }
+  const m=METRICS[metric], v=m.val(st);
+  if(v<=0) return "var(--s0)";
+  let i=1; while(i<5 && v>=m.stops[i+1]) i++;
+  if(metric==="g") i=Math.min(5,v+1);
+  return `var(${SHADES[i]})`;
+}
+function textOn(fill){ return /--s4|--s5|--dem|--rep|--neutral/.test(fill)?"#ffffff":"var(--ink)"; }
+
+function renderMapView(){
+  const v=$("#v-map");
+  const statesHeld=Object.keys(BYSTATE).length;
+  const pjm=BOOK.assets.filter(a=>a.iso==="PJM").reduce((s,a)=>s+a.exp,0);
+  v.innerHTML=`
+  <div class="tiles">
+    <div class="tile"><span class="lbl">Term loans, book names</span><span class="v">$${fmt(TOTAL/1000,1)}bn</span><span class="s">${BOOK.credits.length} issuers · ${BOOK.credits.filter(c=>c.tbc).length} with size tbc · $${fmt(GEN_TOTAL/1000,1)}bn generation</span></div>
+    <div class="tile"><span class="lbl">States with exposure</span><span class="v">${statesHeld}</span><span class="s">Top: ${topStates().slice(0,3).map(([s,o])=>`${s} $${fmt(o.exp)}mm`).join(" · ")}</span></div>
+    <div class="tile"><span class="lbl">PJM share</span><span class="v">${fmt(100*pjm/TOTAL)}%</span><span class="s">2028/29 BRA cleared at $325/MW-day cap</span></div>
+    <div class="tile"><span class="lbl">Exposure in DC-hot states</span><span class="v">${fmt(100*hotShare())}%</span><span class="s">States with growth signal Strong or above</span></div>
+  </div>
+  <div class="grid2">
+    <div class="card map">
+      <div class="controls" style="justify-content:space-between">
+        <h2>By state</h2>
+        <div class="seg" role="group" aria-label="Map metric" id="metricSeg">
+          ${Object.entries(METRICS).map(([k,m])=>`<button type="button" data-m="${k}" aria-pressed="${k===metric}">${m.label.replace(/ \(.*\)/,"")}</button>`).join("")}
+        </div>
+      </div>
+      <div id="mapSvg"></div>
+      <div class="legend" id="legend"></div>
+      <p class="note">Amber ring = a book name owns generation in the state. Exposure is each issuer's term loan size split across its plants by MW, not our holdings. $${fmt(UNALLOC)}mm (utility-services names) is not mapped to a state. Alpha Gen's NJ plants and Keys (MD) have no public MW, so they get no allocation.</p>
+    </div>
+    <div class="card" id="drawer"></div>
+  </div>`;
+  $("#metricSeg").addEventListener("click",e=>{const b=e.target.closest("button"); if(!b) return; metric=b.dataset.m; drawMap(); $("#metricSeg").querySelectorAll("button").forEach(x=>x.setAttribute("aria-pressed",x.dataset.m===metric));});
+  drawMap(); drawDrawer();
+}
+function topStates(){ return Object.entries(BYSTATE).sort((a,b)=>b[1].exp-a[1].exp); }
+function hotShare(){ return Object.entries(BYSTATE).filter(([s])=>(DC[s]?.g||0)>=3).reduce((t,[,o])=>t+o.exp,0)/TOTAL; }
+function drawMap(){
+  const W=56,G=4, cols=12, rows=8;
+  let h=`<svg viewBox="0 0 ${cols*(W+G)} ${rows*(W+G)}" role="img" aria-label="US tile map coloured by ${METRICS[metric].label}">`;
+  for(const [st,[c,r]] of Object.entries(GRID)){
+    const x=c*(W+G), y=r*(W+G), f=fillFor(st), tc=textOn(f);
+    const held=!!BYSTATE[st];
+    let sub="";
+    if(metric==="exp") sub=held?`$${f1(BYSTATE[st].exp)}`:"";
+    else if(metric==="op") sub=DC[st]?.op?fmt(DC[st].op,1):"";
+    else if(metric==="pipe") sub=DC[st]?.pipe?fmt(DC[st].pipe,1):"";
+    else if(metric==="g") sub=DC[st]?.g?"▲".repeat(DC[st].g):"";
+    else if(metric==="pol") sub=POL[st]?(POL[st].flip?"FLIP":(POL[st].conf?"":"tbc")):"";
+    h+=`<g class="st${st===selState?" sel":""}" data-st="${st}" tabindex="0" role="button" aria-label="${NAMES[st]}">
+      <rect x="${x}" y="${y}" width="${W}" height="${W}" rx="5" fill="${f}"></rect>
+      ${held?`<rect class="ring" x="${x+3.5}" y="${y+3.5}" width="${W-7}" height="${W-7}" rx="3"></rect>`:""}
+      <text x="${x+W/2}" y="${y+24}" text-anchor="middle" font-size="14" font-weight="500" fill="${tc}">${st}</text>
+      <text x="${x+W/2}" y="${y+41}" text-anchor="middle" font-size="10" fill="${tc}">${sub}</text></g>`;
+  }
+  h+="</svg>";
+  $("#mapSvg").innerHTML=h;
+  $("#mapSvg").querySelectorAll(".st").forEach(g=>{
+    const go=()=>{selState=g.dataset.st; drawMap(); drawDrawer();};
+    g.addEventListener("click",go); g.addEventListener("keydown",e=>{if(e.key==="Enter"||e.key===" "){e.preventDefault();go();}});
+  });
+  const m=METRICS[metric]; let lg="";
+  if(metric==="pol") lg=`<span><i class="sw" style="background:var(--dem)"></i>Democrat</span><span><i class="sw" style="background:var(--rep)"></i>Republican</span><span><i class="sw" style="background:var(--neutral)"></i>Too close / tbc</span><span><i class="sw" style="background:var(--s0)"></i>Not tracked</span>`;
+  else if(metric==="g") lg=GROWTH.map((t,i)=>`<span><i class="sw" style="background:var(${SHADES[i+1]})"></i>${t}</span>`).join("");
+  else lg=[1,2,3,4,5].map(i=>`<span><i class="sw" style="background:var(${SHADES[i]})"></i>${i===5?"≥ "+m.stops[5]:m.stops[i]+"–"+m.stops[i+1]}</span>`).join("");
+  $("#legend").innerHTML=`<span class="lbl">${m.label}</span>`+lg;
+}
+function drawDrawer(){
+  const st=selState, b=BYSTATE[st], d=DC[st]||{op:0,pipe:0,g:0,t:""}, p=POL[st];
+  const growthPct = d.op>0 ? `${fmt(100*d.pipe/d.op)}% of installed` : (d.pipe>0?"Greenfield":"—");
+  let html=`<div><span class="lbl">${st}</span><h2>${NAMES[st]}</h2></div>
+  <div><h3>Data-center load</h3><dl class="kv" style="margin-top:6px">
+    <dt>Operating</dt><dd>${fmt(d.op,1)} GW</dd>
+    <dt>Pipeline</dt><dd>${fmt(d.pipe,1)} GW (${growthPct})</dd>
+    <dt>Growth</dt><dd>${GROWTH[d.g]} ${"▲".repeat(d.g)}</dd></dl>
+    ${d.t?`<p class="note" style="margin-top:6px">${d.t}</p>`:""}</div>`;
+  html+=`<div><h3>Book names in this state</h3>`;
+  if(!b) html+=`<p class="note">No book names own generation in ${NAMES[st]}.</p>`;
+  else {
+    const byC={}; b.assets.forEach(a=>{(byC[a.c] ||= []).push(a);});
+    html+=`<p class="num" style="margin:6px 0">$${fmt(b.exp)}mm of term loans · ${fmt(b.mw)} MW · ${fmt(100*b.exp/TOTAL,1)}% of total</p>
+    <div class="scroll"><table><thead><tr><th>Issuer / plant</th><th>Zone</th><th class="r">MW</th><th class="r">TL $mm</th></tr></thead><tbody>`;
+    for(const [cid,as] of Object.entries(byC)){
+      const c=credit(cid), tot=as.reduce((s,a)=>s+a.exp,0);
+      html+=`<tr class="grp"><td>${c.name} ${c.ours?`<span class="pill">${c.ours.cur}</span>`:""}</td><td></td><td></td><td class="num">${fmt(tot)}</td></tr>`;
+      as.forEach(a=>html+=`<tr><td>&nbsp;&nbsp;${a.n} <span class="note">${a.tech}</span></td><td>${a.iso} ${a.z}</td><td class="num">${fmt(a.mw)}</td><td class="num">${fmt(a.exp)}</td></tr>`);
+    }
+    html+=`</tbody></table></div>`;
+  }
+  html+=`</div><div><h3>Politics</h3>`;
+  html+= p?`<p style="margin:6px 0">Governor: <b>${p.gov}</b> <span class="pill ${p.p==="D"?"dem":p.p==="R"?"rep":""}">${p.p}</span> ${p.flip?'<span class="pill warn">Flip</span>':""} ${p.conf?"":'<span class="pill unv">Confirm</span>'}</p><p class="note">${p.dc||""}</p>`:`<p class="note">Not on the tracked list.</p>`;
+  html+=`</div>`;
+  $("#drawer").innerHTML=html;
+}
+
+/* ===================== exposure tab ===================== */
+const pct = n=>`${fmt(n,2)}%`;
+const dt = d=>{const [y,m,dd]=d.split("-"); return `${m}/${dd}/${y.slice(2)}`;};
+function renderExposure(){
+  const v=$("#v-exposure");
+  const byIso={}, byTech={};
+  BOOK.assets.forEach(a=>{const iso=a.iso==="n/a"?"Not generation":a.iso; byIso[iso]=(byIso[iso]||0)+a.exp;
+    const t=a.tech.includes("Nuclear")?"Nuclear":a.tech.includes("CCGT")?"CCGT":a.tech.includes("Coal")?"Coal":a.tech==="Utility services"?"Utility services":"Gas / oil steam and peakers"; byTech[t]=(byTech[t]||0)+a.exp;});
+  const barList=(o)=>Object.entries(o).sort((a,b)=>b[1]-a[1]).map(([k,x])=>`<tr><td>${k}</td><td style="width:50%"><div class="bar"><i style="width:${100*x/TOTAL}%"></i></div></td><td class="num">$${fmt(x)}</td><td class="num">${fmt(100*x/TOTAL)}%</td></tr>`).join("");
+  const stRows=topStates().map(([s,o])=>`<tr><td>${NAMES[s]}</td><td style="width:45%"><div class="bar"><i style="width:${100*o.exp/TOTAL}%"></i></div></td><td class="num">$${fmt(o.exp)}</td><td class="num">${fmt(100*o.exp/TOTAL)}%</td></tr>`).join("")
+    + `<tr><td>Not mapped to a state</td><td><div class="bar"><i style="width:${100*UNALLOC/TOTAL}%;background:var(--neutral)"></i></div></td><td class="num">$${fmt(UNALLOC)}</td><td class="num">${fmt(100*UNALLOC/TOTAL)}%</td></tr>`;
+  const tln=credit("TLN"), sus=BOOK.assets.find(a=>a.c==="TLN"&&/Susquehanna/.test(a.n)), tlnMW=BOOK.assets.filter(a=>a.c==="TLN").reduce((s,a)=>s+a.mw,0);
+  v.innerHTML=`<h2>Exposure</h2>
+  <div class="card prose" style="max-width:none">
+    <p><b>What this tab shows:</b> how much term loan debt the names in our book have, and where the plants behind that debt sit. Every dollar figure is the <b>public size of the borrower's term loans</b>, not our holdings.</p>
+    <p class="note">State, market and technology totals need a way to spread a fleet borrower's debt across its plants. We split each borrower's term loans by each plant's share of its MW. Example: Talen has $${fmt(tln.held)}mm of term loans and ${fmt(tlnMW)} MW. Susquehanna is ${fmt(sus.mw)} MW, or ${fmt(100*sus.mw/tlnMW)}% of that, so $${fmt(sus.exp)}mm of Talen's term loans count toward Pennsylvania and nuclear. It is not debt secured by Susquehanna alone: Talen's loans are secured by the whole fleet.</p>
+  </div>
+  <div class="grid2" style="grid-template-columns:repeat(auto-fit,minmax(300px,1fr))">
+    <div class="card"><h3>By state</h3><p class="note">Term loans attributed to each state by plant MW.</p><div class="scroll"><table><tbody>${stRows}</tbody></table></div></div>
+    <div class="card"><h3>By market</h3><p class="note">Same attribution, grouped by grid operator and by plant type.</p><table><tbody>${barList(byIso)}</tbody></table><h3>By technology</h3><table><tbody>${barList(byTech)}</tbody></table></div>
+  </div>
+  ${maturityWall()}
+  <div class="card"><h3>Term loans by borrower</h3><p class="note">Each borrower's term loan facilities: size, maturity, spread and where the number came from.</p><div class="scroll"><table>
+    <thead><tr><th>Borrower / facility</th><th class="r">Size $mm</th><th>Maturity</th><th>Spread</th><th class="r">% of total</th><th>Source</th></tr></thead><tbody>
+    ${BOOK.credits.slice().sort((a,b)=>b.held-a.held).map(c=>`<tr class="grp"><td>${c.name}</td><td class="num">${c.held?fmt(c.held):'<span class="pill unv">tbc</span>'}</td><td></td><td></td><td class="num">${c.held?fmt(100*c.held/TOTAL,1)+"%":""}</td><td class="note">${c.cfi}</td></tr>`+
+      c.fac.map(f=>`<tr><td>&nbsp;&nbsp;${f.n}</td><td class="num">${f.size!=null?fmt(f.size):'<span class="pill unv">tbc</span>'}</td><td class="num" style="text-align:left">${f.mat||"—"}</td><td class="num" style="text-align:left">${f.sp||"—"}</td><td></td><td class="note">${f.src}</td></tr>`).join("")).join("")}
+    <tr class="grp"><td>Total (sized facilities)</td><td class="num">${fmt(TOTAL)}</td><td></td><td></td><td class="num">100%</td><td></td></tr>
+    </tbody></table></div></div>
+  <div class="card"><h3>Plants behind each borrower</h3><p class="note">The plants each borrower owns, and the share of its term loans attributed to each plant by MW. This attribution builds the state and market totals above.</p><div class="scroll"><table>
+    <thead><tr><th>Borrower / plant</th><th>State · market · zone</th><th>Type</th><th class="r">MW</th><th class="r">% of borrower MW</th><th class="r">Term loans attributed $mm</th></tr></thead><tbody>
+    ${BOOK.credits.slice().sort((a,b)=>b.held-a.held).map(c=>{ const as=BOOK.assets.filter(a=>a.c===c.id), mw=as.reduce((s,a)=>s+a.mw,0);
+      return `<tr class="grp"><td>${c.name}</td><td>${[...new Set(as.map(a=>a.st).filter(Boolean))].join(", ")||"—"}</td><td></td><td class="num">${mw?fmt(mw):"—"}</td><td class="num">${mw?"100%":""}</td><td class="num">${c.held?fmt(c.held):"tbc"}</td></tr>`+
+      as.map(a=>`<tr><td>&nbsp;&nbsp;${a.n}</td><td>${a.st?a.st+" · "+a.iso+(a.z?" "+a.z:""):"—"}</td><td>${a.tech}</td><td class="num">${a.mw?fmt(a.mw):'<span class="note">MW n.f.</span>'}</td><td class="num">${mw&&a.mw?fmt(100*a.mw/mw)+"%":""}</td><td class="num">${a.exp?fmt(a.exp):"—"}</td></tr>`).join("");}).join("")}
+    </tbody></table></div>
+    <p class="note">MW are each borrower's ownership share where known (Talen from its FY2025 10-K; Pathfinder from LS Power; Alpha Gen from its website, where several plants list no MW). Plants without MW and borrowers without a public loan size get no dollar attribution. Utility-services names are not tied to a state.</p></div>`;
+}
+
+/* ===================== ratings tab ===================== */
+function rPill(r){ if(!r) return '<span class="pill unv">enter</span>'; const n=notch(r); const cls=n<0?"":n<=9?"good":n<=12?"":n<=15?"warn":"bad"; return `<span class="pill ${cls}">${r}</span>`; }
+function renderRatings(){
+  const v=$("#v-ratings");
+  const rated=BOOK.credits.filter(c=>c.ours);
+  const ratedPar=rated.reduce((s,c)=>s+c.held,0)||1;
+  const wavg=(k)=>{ if(!rated.length) return "—"; let s=0; rated.forEach(c=>s+=notch(c.ours[k])*c.held); return RSCALE[Math.round(s/ratedPar)]; };
+  const withAg=BOOK.credits.filter(c=>c.agency);
+  v.innerHTML=`<h2>Ratings</h2>
+  <div class="tiles">
+    <div class="tile"><span class="lbl">Book avg · current</span><span class="v">${wavg("cur")}</span><span class="s">Size-weighted, draft desk rating</span></div>
+    <div class="tile"><span class="lbl">Book avg · downside</span><span class="v">${wavg("dn")}</span><span class="s">Post-cap capacity reset case</span></div>
+    <div class="tile"><span class="lbl">Low-confidence drafts</span><span class="v">${BOOK.credits.filter(c=>c.ours&&c.ours.conf==="Low").length} of ${BOOK.credits.length}</span><span class="s">No public rating or leverage</span></div>
+    <div class="tile"><span class="lbl">Publicly rated</span><span class="v">${BOOK.credits.filter(c=>c.agency&&(c.agency.m||c.agency.s||c.agency.f)).length} of ${BOOK.credits.length}</span><span class="s">Any Moody's / S&amp;P / Fitch rating found</span></div>
+  </div>
+  <div class="card"><div class="scroll"><table>
+    <thead><tr><th>Issuer</th><th class="r">TL $mm</th><th>Moody's</th><th>S&amp;P</th><th>Fitch</th><th>Draft: current</th><th>Forward</th><th>Upside</th><th>Downside</th><th>Recovery</th><th>Conf.</th><th>vs. S&amp;P</th></tr></thead><tbody>
+    ${BOOK.credits.map(c=>{const a=c.agency||{}, o=c.ours||{}; const d=(a.s&&o.cur)?notch(a.s)-notch(o.cur):null;
+      const ag=r=>r?`<span class="pill ${a.q==="low"?"unv":""}" title="${a.note}">${r}</span>`:'<span class="note">NR / n.f.</span>';
+      return `<tr><td>${c.name}</td><td class="num">${c.held?fmt(c.held):"tbc"}</td><td>${ag(a.m)}</td><td>${ag(a.s)}</td><td>${ag(a.f)}</td><td>${rPill(o.cur)}</td><td>${rPill(o.fwd)}</td><td>${rPill(o.up)}</td><td>${rPill(o.dn)}</td><td class="num">${o.rec||"—"}</td><td>${o.conf?`<span class="pill ${o.conf==="Low"?"warn":""}">${o.conf}</span>`:""}</td><td class="num">${d===null?"—":d>0?"+"+d+" above":d<0?Math.abs(d)+" below":"in line"}</td></tr>`;}).join("")}
+    </tbody></table></div>
+    <p class="note"><b>Draft ratings are Claude's proposal from public data, not desk-approved.</b> Confidence is Low where no agency rating, leverage or hedge data is public. Agency pills with a dashed outline came from a secondary source; check them on Bloomberg RATC. "NR / n.f." means not rated or not found publicly.</p></div>
+  <div class="card"><h3>Rating basis by credit</h3><div class="scroll"><table>
+    <thead><tr><th>Issuer</th><th>Agency ratings found</th><th>Draft rationale</th></tr></thead><tbody>
+    ${BOOK.credits.map(c=>`<tr><td style="white-space:nowrap">${c.name}</td><td class="note" style="min-width:240px">${c.agency.note}</td><td class="note" style="min-width:280px">${c.ours.why}</td></tr>`).join("")}
+    </tbody></table></div></div>`;
+}
+
+/* ===================== capacity tab ===================== */
+function renderCapacity(){
+  const v=$("#v-capacity");
+  const maxPx=Math.max(...PJM_BRA.map(x=>x.px));
+  const pjmA=BOOK.assets.filter(a=>a.iso==="PJM"&&a.mw>0).map(a=>{const u=a.mw*(ELCC[a.tech]||0.7); return {...a,ucap:u, rev:u*325*365/1e6};});
+  const byC={}; pjmA.forEach(a=>{const o=byC[a.c] ||= {ucap:0,rev:0}; o.ucap+=a.ucap; o.rev+=a.rev;});
+  const totRev=pjmA.reduce((s,a)=>s+a.rev,0), totU=pjmA.reduce((s,a)=>s+a.ucap,0);
+  const nonPjm=BOOK.assets.filter(a=>a.iso!=="PJM").reduce((s,a)=>s+a.exp,0);
+  v.innerHTML=`<h2>Capacity auctions</h2>
+  <div class="tiles">
+    <div class="tile"><span class="lbl">PJM 2028/29 BRA</span><span class="v">$325.00</span><span class="s">/MW-day RTO, at cap; released 14 Jul 2026</span></div>
+    <div class="tile"><span class="lbl">Shortfall vs. target</span><span class="v">6.8 GW</span><span class="s">Only 525 MW of new supply cleared</span></div>
+    <div class="tile"><span class="lbl">Uncapped simulation</span><span class="v">~$555</span><span class="s">ComEd ~$777/MW-day</span></div>
+    <div class="tile"><span class="lbl">MISO PRA 2026/27</span><span class="v">$424</span><span class="s">Summer, North/Central; annualized ~$126, down 42%</span></div>
+  </div>
+  <div class="grid2">
+    <div class="card"><h3>Capacity revenue vs. EBITDA and debt</h3><p class="note">How much of each borrower's earnings and debt the PJM capacity price supports, at the $325/MW-day 2028/29 clearing price.</p><div class="scroll"><table class="wrap">
+      <thead><tr><th>Borrower</th><th class="r">PJM UCAP MW</th><th class="r">Capacity rev $mm/yr</th><th class="r">EBITDA $mm</th><th class="r">Cap. rev % EBITDA</th><th class="r">Debt $mm</th><th class="r">Cap. rev % debt</th></tr></thead><tbody>
+      ${Object.entries(byC).sort((a,b)=>b[1].rev-a[1].rev).map(([id,o])=>{const c=credit(id);
+        return `<tr><td>${c.name}</td><td class="num">${fmt(o.ucap)}</td><td class="num">${fmt(o.rev)}</td><td class="num" title="${c.ebitdaNote}">${c.ebitda?fmt(c.ebitda):'<span class="note">n.p.</span>'}</td><td class="num">${c.ebitda?fmt(100*o.rev/c.ebitda)+"%":"—"}</td><td class="num">${c.debt?fmt(c.debt):'<span class="note">tbc</span>'}</td><td class="num">${c.debt?fmt(100*o.rev/c.debt)+"%":"—"}</td></tr>`;}).join("")}
+      <tr class="grp"><td>Total PJM</td><td class="num">${fmt(totU)}</td><td class="num">${fmt(totRev)}</td><td></td><td></td><td></td><td></td></tr></tbody></table></div>
+      <ul class="note" style="margin:0;padding-left:18px">
+        <li><b>Capacity revenue</b> = PJM UCAP MW × $325/MW-day × 365. UCAP = plant MW × indicative ELCC class rating (nuclear 0.95, CCGT 0.74, coal 0.83, steam 0.62, oil and peakers 0.60). It is indicative: actual cleared MW and zonal prices differ.</li>
+        <li><b>EBITDA</b>: Talen 2026E adj. EBITDA midpoint ($2,050–2,200mm guidance). The project borrowers do not publish EBITDA ("n.p."); send compliance certificates or lender models to fill these in.</li>
+        <li><b>Debt</b>: Talen is total debt ($9.57bn at 9/30/26). For the project loans it is the term loan size, which is assumed to be their main debt.</li>
+        <li><b>Talen</b> includes Brandon Shores and Wagner, which earn RMR payments rather than BRA capacity revenue until May 2029, and Talen has already monetized ~$1.5bn of 2027–29 capacity cash flows. Its BRA revenue at risk is therefore lower than shown.</li>
+        <li><b>Excluded:</b> Alpha Gen's NYISO, ISO-NE and CAISO plants and its PJM plants without public MW; Asplundh and Centuri (utility services, no capacity revenue).</li>
+      </ul></div>
+    <div class="card"><h3>PJM RTO clearing price, $/MW-day</h3>
+      <svg viewBox="0 0 360 210" role="img" aria-label="PJM BRA clearing prices by delivery year">
+        ${[0,100,200,300].map(t=>`<line x1="40" x2="350" y1="${180-t/maxPx*150}" y2="${180-t/maxPx*150}" stroke="var(--line)"/><text x="34" y="${184-t/maxPx*150}" text-anchor="end" font-size="10" fill="var(--muted)">${t}</text>`).join("")}
+        ${PJM_BRA.map((x,i)=>{const bw=44,xx=52+i*60,hh=x.px/maxPx*150; return `<rect x="${xx}" y="${180-hh}" width="${bw}" height="${hh}" rx="2" fill="${i>=2?"var(--accent)":"var(--s2)"}"/><text x="${xx+bw/2}" y="${174-hh}" text-anchor="middle" font-size="10" fill="var(--ink)">${fmt(x.px,0)}</text><text x="${xx+bw/2}" y="197" text-anchor="middle" font-size="10" fill="var(--muted)">${x.dy}</text>`;}).join("")}
+      </svg>
+      <table><tbody>${PJM_BRA.map(x=>`<tr><td>${x.dy}</td><td class="num">$${fmt(x.px,2)}</td><td class="note">${x.note}</td></tr>`).join("")}</tbody></table>
+      <p class="note">The price collar (cap and floor) has been extended through the 2029/30 BRA. The 2030/31 auction is the first uncapped print and the key cliff date for the book's downside case.</p></div>
+  </div>`;
+}
+
+/* ===================== hedging tab ===================== */
+function renderHedging(){
+  const v=$("#v-hedging");
+  v.innerHTML=`<h2>Hedging</h2>
+  <div class="card"><p class="note">How much of each borrower's expected output is hedged over the next three years, and what the company says about its hedging policy. Desk test: at least 60% hedged in year 1 and 40% in year 2.</p><div class="scroll"><table class="wrap">
+      <thead><tr><th>Borrower</th><th class="r">Y1</th><th class="r">Y2</th><th class="r">Y3</th><th>Vs. desk test</th><th>What is disclosed</th><th>Policy</th></tr></thead><tbody>
+      ${BOOK.credits.map(c=>{ const h=c.hedge;
+        const st=c.seg==="svc"?'<span class="note">n/a</span>':!h?'<span class="pill unv">Not disclosed</span>':(h[0]>=60&&h[1]>=40)?'<span class="pill good">Meets</span>':h[0]>=55?'<span class="pill warn">Light</span>':'<span class="pill bad">Below</span>';
+        return `<tr><td>${c.name}</td><td class="num">${h?h[0]+"%":"—"}</td><td class="num">${h?h[1]+"%":"—"}</td><td class="num">${h?h[2]+"%":"—"}</td><td>${st}</td><td class="note" style="min-width:150px">${c.seg==="svc"?"n/a (no generation)":c.hedgeNote}</td><td class="note" style="min-width:180px"><b style="color:var(--ink);font-weight:600">${c.hpolicy}</b></td></tr>`;}).join("")}
+      </tbody></table></div>
+      <p class="note">Talen: Y1 = Q4 2026, Y2 = 2027, Y3 = 2028. Project-level hedge ratios are in lender compliance certificates, not public filings.</p></div>`;
+}
+
+/* ===================== leverage tab ===================== */
+function renderLeverage(){
+  const v=$("#v-leverage");
+  v.innerHTML=`<h2>Leverage</h2>
+  <div class="card"><p class="note">Leverage and debt per kW for each borrower, with the leverage the company says it targets.</p><div class="scroll"><table class="wrap">
+      <thead><tr><th>Borrower</th><th class="r">Leverage</th><th>Basis</th><th class="r">Debt $/kW</th><th>Notes</th><th>Policy</th></tr></thead><tbody>
+      ${BOOK.credits.map(c=>{ const kw=c.debtKW!=null?(c.debtKW<=600?`${fmt(c.debtKW)}`:`<span style="color:var(--warn)">${fmt(c.debtKW)}</span>`):"—";
+        return `<tr><td>${c.name}</td><td class="num">${c.lev!=null?fmt(c.lev,1)+"x":"—"}</td><td class="note">${c.levType||""}</td><td class="num" title="${c.kwNote||""}">${kw}</td><td class="note" style="min-width:150px">${c.levNote}</td><td class="note" style="min-width:180px"><b style="color:var(--ink);font-weight:600">${c.policy}</b></td></tr>`;}).join("")}
+      </tbody></table></div>
+      <p class="note">Debt $/kW: Talen = total debt / 13.1 GW owned; project loans = term loan / plant MW (hover a figure for its basis). Above ~$600 is shown in amber. DSCRs and project leverage are not public; send compliance certificates to fill them in.</p></div>`;
+}
+
+/* ===================== political tab ===================== */
+function renderPolitical(){
+  const v=$("#v-political");
+  const bookStates=new Set(Object.keys(BYSTATE));
+  const rows=Object.entries(POL).sort((a,b)=>(BYSTATE[b[0]]?.exp||0)-(BYSTATE[a[0]]?.exp||0));
+  v.innerHTML=`<h2>Political</h2>
+  <div class="tiles">
+    <div class="tile"><span class="lbl">House</span><span class="v">Democrats</span><span class="s">Projected majority (NBC, CNBC)</span></div>
+    <div class="tile"><span class="lbl">Senate</span><span class="v">Democrats</span><span class="s">7 seats flipped; AK and MS still uncalled</span></div>
+    <div class="tile"><span class="lbl">Governors</span><span class="v">D majority</span><span class="s">5 flips: TX, GA, OH, IA, NV. First D majority since 2010</span></div>
+    <div class="tile"><span class="lbl">Book in flipped states</span><span class="v">$${f1(["TX","GA","OH","IA","NV"].reduce((s,x)=>s+(BYSTATE[x]?.exp||0),0))}mm</span><span class="s">${["TX","GA","OH","IA","NV"].filter(x=>BYSTATE[x]).join(", ")||"None"}</span></div>
+  </div>
+  <div class="grid2">
+    <div class="card prose edit">
+      <span class="lbl">High-level views · draft</span>
+      <p><b>Results:</b> Democrats took both chambers on 3 Nov 2026 and flipped five governorships. Electricity bills and data centers were a central affordability message in the battlegrounds. Data Center Watch found most winning candidates it tracked backed tighter regulation or a moratorium.</p>
+      <p><b>What it means for the book</b></p>
+      <ul>
+        <li><b>Data-center load growth slows at the state level.</b> Pauses or conditional moratoria are now likely in GA and OH, and possibly WI. Texas is the biggest swing: a Democratic governor plus SB6 large-load rules. This trims the upside case more than the base case.</li>
+        <li><b>Capacity price politics intensify.</b> The current collar runs through 2029/30. Expect governors in PA, NJ, MD, VA and IL to push for an extension, PJM governance changes and state-procured or utility-owned generation. That caps upside after 2030 but also reduces the odds of a disorderly price spike.</li>
+        <li><b>Contracted beats merchant.</b> Credits with signed co-location or PPA revenue (Talen's Susquehanna deal) gain relative value. Our merchant single-asset CCGTs in OH and PA (South Field, Trumbull, Fairview, Lackawanna) carry more policy risk.</li>
+        <li><b>Federal:</b> divided government with a Democratic Congress. Nuclear PTC (45U) and gas permitting are unlikely to be reopened. Expect FERC oversight hearings on large-load interconnection and PJM.</li>
+        <li><b>Ratings read:</b> no change to current ratings. Downside cases for OH and PA merchant names should assume capacity at $150–200/MW-day after the collar.</li>
+      </ul>
+    </div>
+    <div class="card"><h3>Governors in power-relevant states</h3><div class="scroll"><table>
+      <thead><tr><th>State</th><th>Governor</th><th></th><th class="r">Book $mm</th><th>Data-center stance</th></tr></thead><tbody>
+      ${rows.map(([s,p])=>`<tr><td>${s}</td><td>${p.gov}</td><td><span class="pill ${p.p==="D"?"dem":p.p==="R"?"rep":""}">${p.p}</span> ${p.flip?'<span class="pill warn">Flip</span>':""} ${p.conf?"":'<span class="pill unv">Confirm</span>'}</td><td class="num">${bookStates.has(s)?f1(BYSTATE[s].exp):"—"}</td><td class="note">${p.dc}</td></tr>`).join("")}
+      </tbody></table></div>
+      <p class="note">Results are preliminary as of 6 Nov 2026. Rows marked Confirm had no final call in the sources checked; verify with AP before circulating.</p></div>
+  </div>
+  <div class="card"><h3>Sources</h3><ul class="src">
+    <li><a href="https://www.nbcnews.com/politics/2026-election/live-blog/election-results-house-senate-trump-live-updates-rcna607376">NBC News: election results live updates</a></li>
+    <li><a href="https://www.cnbc.com/2026/11/04/2026-midterm-election-results-live-updates.html">CNBC: 2026 midterm results</a></li>
+    <li><a href="https://www.usnews.com/news/national-news/articles/2026-11-05/2026-midterm-results-which-races-are-still-undecided">US News: races still undecided</a></li>
+    <li><a href="https://fortune.com/2026/11/04/democrats-midterm-election-2026-anti-data-center-governors-texas-georgia-ohio-ai-infrastructure-big-tech-spending-moratorium-regulations/">Fortune: anti-data-center governors</a></li>
+    <li><a href="https://www.scrippsnews.com/politics/america-votes/voters-elected-governors-to-curb-data-centers-lowering-bills-for-gas-and-groceries-is-harder">Scripps: governors elected to curb data centers</a></li>
+    <li><a href="https://abcnews.com/Technology/wireStory/data-centers-beating-midterm-elections-reckoning-ahead-tech-137902293">ABC News: data centers took a beating</a></li>
+  </ul></div>`;
+}
+
+/* ===================== data centers tab ===================== */
+function renderDC(){
+  const v=$("#v-data-centers");
+  const rows=Object.entries(DC).filter(([,d])=>d.op+d.pipe>0.3).sort((a,b)=>(b[1].op+b[1].pipe)-(a[1].op+a[1].pipe));
+  const maxT=Math.max(...rows.map(([,d])=>d.op+d.pipe));
+  v.innerHTML=`<h2>Data-center load by state</h2>
+  <div class="card"><div class="scroll"><table>
+    <thead><tr><th>State</th><th class="r">Operating GW</th><th class="r">Pipeline GW</th><th style="min-width:180px">Operating <span style="color:var(--amber)">+ pipeline</span></th><th>Growth</th><th class="r">Book $mm</th><th>Notes</th></tr></thead><tbody>
+    ${rows.map(([s,d])=>`<tr><td>${NAMES[s]}</td><td class="num">${fmt(d.op,1)}</td><td class="num">${fmt(d.pipe,1)}</td>
+      <td><div class="bar" style="display:flex"><i style="width:${100*d.op/maxT}%"></i><i style="width:${100*d.pipe/maxT}%;background:var(--amber)"></i></div></td>
+      <td>${d.g>=3?`<span class="pill warn">${GROWTH[d.g]}</span>`:`<span class="pill">${GROWTH[d.g]}</span>`}</td>
+      <td class="num">${BYSTATE[s]?f1(BYSTATE[s].exp):"—"}</td><td class="note">${d.t}</td></tr>`).join("")}
+    </tbody></table></div>
+    <p class="note">Approximate GW. Texas and Virginia from Baxtel (Oct 2026); other states are desk estimates triangulated from Baxtel, JLL midyear 2026 and Pew / Data Center Map facility counts. Trackers disagree on definitions (IT load vs. utility capacity, firm vs. announced pipeline), so refresh before circulating.</p>
+    <ul class="src">
+      <li><a href="https://baxtel.com/news/2026-is-the-year-texas-passes-virginia-in-data-center-capacity">Baxtel: Texas passes Virginia in capacity</a></li>
+      <li><a href="https://www.pewresearch.org/?p=296857">Pew: Virginia, Texas and Georgia lead in planned data centers</a></li>
+      <li><a href="https://www.pjm.com/-/media/DotCom/markets-ops/rpm/rpm-auction-info/2028-2029/2028-2029-bra-results-report.pdf">PJM: 2028/29 BRA results report</a></li>
+      <li><a href="https://www.enelnorthamerica.com/insights/blogs/miso-2026-2027-capacity-auction-results">Enel: MISO 2026/27 PRA results</a></li>
+    </ul></div>`;
+}
+
+/* ===================== maturity wall ===================== */
+function maturityWall(){
+  const facs=[]; BOOK.credits.forEach(c=>c.fac.forEach(f=>{ if(f.mat && f.size) facs.push({c,f}); }));
+  const missing=BOOK.credits.flatMap(c=>c.fac.filter(f=>!f.mat||!f.size).map(f=>c.name)).filter((v,i,a)=>a.indexOf(v)===i);
+  const yrs={}; facs.forEach(x=>{(yrs[x.f.mat] ||= []).push(x);});
+  const ys=Object.keys(yrs).map(Number), span=[];
+  for(let y=Math.min(2027,...ys); y<=Math.max(2033,...ys); y++) span.push(y);
+  const max=Math.ceil(Math.max(...span.map(y=>(yrs[y]||[]).reduce((s,x)=>s+x.f.size,0)),1)*1.15/500)*500;
+  const W=60, H=150, x0=48, top=26, xs=y=>x0+(y-span[0])*W, cliffX=xs(2030)+W-6;
+  let svg=`<svg viewBox="0 0 ${x0+span.length*W+10} ${top+H+28}" role="img" aria-label="Term loan size by maturity year" style="width:100%;min-width:460px;height:auto">`;
+  svg+=`<rect x="${xs(span[0])}" y="${top}" width="${cliffX-xs(span[0])}" height="${H}" fill="var(--soft)"/>`;
+  [0,0.5,1].forEach(f=>{const y=top+H-f*H; svg+=`<line x1="${x0}" x2="${x0+span.length*W}" y1="${y}" y2="${y}" stroke="var(--line)"/><text x="${x0-6}" y="${y+4}" text-anchor="end" font-size="10" fill="var(--muted)">${fmt(f*max)}</text>`;});
+  svg+=`<line x1="${cliffX}" x2="${cliffX}" y1="${top-14}" y2="${top+H}" stroke="var(--amber)" stroke-width="2" stroke-dasharray="4 3"/><text x="${cliffX+5}" y="${top-4}" font-size="10" fill="var(--amber)">First uncapped PJM year (2030/31)</text>`;
+  span.forEach(y=>{ let yy=top+H;
+    (yrs[y]||[]).sort((a,b)=>b.f.size-a.f.size).forEach((x,i)=>{const h=x.f.size/max*H; yy-=h;
+      svg+=`<rect x="${xs(y)+10}" y="${yy}" width="${W-20}" height="${h}" fill="${i%2?"var(--s3)":"var(--accent)"}" stroke="var(--panel)"><title>${x.c.name} ${x.f.n}: $${fmt(x.f.size)}mm</title></rect>`;
+      if(h>14) svg+=`<text x="${xs(y)+W/2}" y="${yy+h/2+4}" text-anchor="middle" font-size="9.5" fill="var(--panel)">${x.c.id}</text>`;});
+    const tot=(yrs[y]||[]).reduce((s,x)=>s+x.f.size,0);
+    if(tot) svg+=`<text x="${xs(y)+W/2}" y="${yy-5}" text-anchor="middle" font-size="10" fill="var(--ink)">$${fmt(tot)}</text>`;
+    svg+=`<text x="${xs(y)+W/2}" y="${top+H+16}" text-anchor="middle" font-size="10.5" fill="var(--muted)">${y}</text>`; });
+  return `<div class="card"><h3>Maturity wall, term loan size $mm</h3><div class="scroll">${svg}</div>
+    <p class="note">Only facilities with a sourced size and maturity are shown. Maturity or size still needed: ${missing.join(", ")}.</p></div>`;
+}
+
+/* ===================== watchlist tab ===================== */
+function renderWatch(){
+  const v=$("#v-watchlist");
+  const order={action:0,watch:1,positive:2}, lab={action:["bad","Action"],watch:["warn","Watch"],positive:["good","Positive"]};
+  const items=BOOK.watch.slice().sort((a,b)=>order[a.status]-order[b.status]);
+  v.innerHTML=`<h2>Watchlist</h2>
+  <div class="card"><h3>Credits</h3>
+    ${items.length?`<div class="scroll"><table>
+    <thead><tr><th>Status</th><th>Issuer</th><th>Theme</th><th>Why</th><th>Trigger</th><th>By</th></tr></thead><tbody>
+    ${items.map(w=>{const c=credit(w.c), [cl,t]=lab[w.status]; return `<tr><td><span class="pill ${cl}">${t}</span></td><td>${c.name}</td><td>${w.theme}</td><td class="note">${w.why}</td><td class="note">${w.trigger}</td><td>${w.due}</td></tr>`;}).join("")}
+    </tbody></table></div>`:`<p class="note">No names on the watchlist yet. Tell me which issuers to add, with the reason and the trigger, and they'll appear here ranked Action, Watch, Positive.</p>`}
+  </div>
+  <div class="card"><h3>Recent financing events</h3><div class="scroll"><table>
+    <thead><tr><th>Date</th><th>Issuer</th><th>What happened</th></tr></thead><tbody>
+    ${EVENTS.map(e=>`<tr><td class="num" style="text-align:left;white-space:nowrap">${e.lbl||dt(e.d)}</td><td style="white-space:nowrap">${credit(e.c).name}</td><td class="note">${e.t}</td></tr>`).join("")}
+    </tbody></table></div>
+    <ul class="src">
+      <li><a href="https://www.prnewswire.com/il/news-releases/opc-energys-us-subsidiary-cpv-secures-825-million-financing-for-shore-and-maryland-power-plants-302924009.html">OPC Energy: CPV $825mm Shore and Maryland financing</a></li>
+      <li><a href="https://news.bloomberglaw.com/private-equity/santander-kicks-off-leveraged-loan-for-pathfinder-power-lbo">Bloomberg Law: Pathfinder Power LBO loan</a></li>
+      <li><a href="https://www.utilitydive.com/news/ls-power-constellation-pjm-gas-power-plant/815168/">Utility Dive: LS Power buys 4.4 GW from Constellation</a></li>
+      <li><a href="https://www.globenewswire.com/news-release/2026/05/14/3295417/0/en/talen-energy-announces-credit-facility-refinancing-transactions.html">Talen: credit facility refinancing, May 2026</a></li>
+      <li><a href="https://ir.talenenergy.com/news-releases/news-release-details/talen-energy-announces-launch-12-billion-term-loan-b-financing">Talen: $1.2bn TLB launch, Oct 2025</a></li>
+      <li><a href="https://www.whitecase.com/news/press-release/white-case-advises-alpha-generation-us292-billion-financing-transactions">White &amp; Case: Alpha Generation repricing</a></li>
+      <li><a href="https://www.sec.gov/Archives/edgar/data/0001981599/000198159926000089/ctri-20260628.htm">Centuri 10-Q, Q2 2026</a></li>
+      <li><a href="https://www.svpglobal.com/strategic-value-partners-to-acquire-minority-stake-in-south-field-energy/">SVP: minority stake in South Field</a></li>
+      <li><a href="https://cpv.com/2021/11/29/cpv-wins-2020-power-finance-risk-conventional-power-deal-of-the-year-for-1-3-billion-raise-for-three-rivers-project-adding-to-recent-list-of-honors/">CPV: Three Rivers 2020 financing</a></li>
+    </ul></div>
+  <div class="card"><h3>Market and policy events</h3><div class="scroll"><table>
+    <thead><tr><th>Event</th><th>When</th><th>Why it matters for the book</th></tr></thead><tbody>
+    ${MARKET_WATCH.map(m=>`<tr><td>${m.what}</td><td style="white-space:nowrap">${m.when}</td><td class="note">${m.why}</td></tr>`).join("")}
+    </tbody></table></div></div>`;
+}
+
+/* ===================== routing ===================== */
+const VIEWS={"map":renderMapView,"exposure":renderExposure,"ratings":renderRatings,"capacity":renderCapacity,"hedging":renderHedging,"leverage":renderLeverage,"political":renderPolitical,"data-centers":renderDC,"watchlist":renderWatch};
+const rendered=new Set();
+function show(k){
+  if(!VIEWS[k]) k="map";
+  for(const id of Object.keys(VIEWS)) $("#v-"+id).hidden = id!==k;
+  if(!rendered.has(k)){ try{ VIEWS[k](); }catch(e){ $("#v-"+k).innerHTML=`<p class="note">This tab failed to load: ${e.message}</p>`; } rendered.add(k); }
+  document.querySelectorAll("#tabs .tab").forEach(b=>b.setAttribute("aria-current", b.dataset.v===k?"page":"false"));
+  window.scrollTo(0,0);
+}
+// Tabs are buttons, not links: the claude.ai viewer intercepts link clicks. Hash is a bookmark only.
+document.getElementById("tabs").addEventListener("click",e=>{
+  const b=e.target.closest(".tab"); if(!b) return;
+  show(b.dataset.v);
+  try{ history.replaceState(null,"","#"+b.dataset.v); }catch(_){}
+});
+window.addEventListener("hashchange",()=>show(location.hash.slice(1)));
+let start="map"; try{ start=(location.hash||"#map").slice(1); }catch(_){}
+show(start);
+</script>
+</body>
+</html>
