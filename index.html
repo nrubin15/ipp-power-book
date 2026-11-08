@@ -114,7 +114,7 @@ a{color:var(--accent)}
   <div class="wrap">
     <div class="hdr">
       <h1>IPP Power Book</h1>
-      <span class="asof">Market data as of 6 Nov 2026</span>
+      <span class="asof">Market data as of 6 Nov 2026 · politics 8 Nov</span>
       <span class="asof">Facility sizes from public sources</span>
       <span class="sample" id="buildBadge">Public data + AB desk data</span>
     </div>
@@ -393,20 +393,24 @@ const GROWTH = ["Flat","Modest","Growing","Strong","Very strong"];
 
 /* ===== Political: 3 Nov 2026 midterms (preliminary; AP calls still pending in some races) ===== */
 const POL = {
-  TX:{gov:"Gina Hinojosa", p:"D", flip:true, conf:true, dc:"Flagged by Data Center Watch as the most important result for DC development. Senate: Talarico (D) beat Paxton."},
-  GA:{gov:"Keisha Lance Bottoms", p:"D", flip:true, conf:true, dc:"Promised temporary statewide pause on new DC construction."},
-  OH:{gov:"Amy Acton", p:"D", flip:true, conf:true, dc:"Conditional DC moratorium unless developers cover full utility cost, union labor, environmental standards."},
+  /* 3 Nov 2026 midterms, status as of 8 Nov 2026. p:"?" = uncalled (lean shown in gov text). */
+  PA:{gov:"Josh Shapiro (re-elected)", p:"D", flip:false, conf:true, dc:"Won 60–38 over Garrity. Filed at FERC over the PJM price cap; pushing PJM governance reform. Biggest state in the book."},
+  OH:{gov:"Amy Acton", p:"D", flip:true, conf:true, dc:"Conditional data-center moratorium unless developers cover full utility costs, use union labor and meet environmental standards."},
+  NJ:{gov:"Mikie Sherrill (elected 2025)", p:"D", flip:false, conf:true, dc:"Not on the 2026 ballot. Ran on freezing utility rates; hostile to the PJM status quo."},
+  DE:{gov:"Matt Meyer (elected 2024)", p:"D", flip:false, conf:true, dc:"Not on the 2026 ballot. Delaware has pushed for PJM changes alongside NJ and MD."},
+  MD:{gov:"Wes Moore (re-elected)", p:"D", flip:false, conf:true, dc:"Projected winner, ~64–32 over Cox. Next Generation Energy Act: state-procured dispatchable generation."},
+  NY:{gov:"Kathy Hochul (re-elected)", p:"D", flip:false, conf:true, dc:"Won ~60–40 over Blakeman. NYISO, not PJM."},
+  IL:{gov:"JB Pritzker (re-elected)", p:"D", flip:false, conf:true, dc:"Won ~60–37 over Bailey. State pursuing a PJM exit study / resource adequacy authority; ComEd had the highest uncapped capacity price."},
+  TX:{gov:"Gina Hinojosa", p:"D", flip:true, conf:true, dc:"Flagged by Data Center Watch as the most important result for data-center development. Senate: Talarico (D) beat Paxton."},
+  MI:{gov:"Jocelyn Benson", p:"D", flip:false, conf:true, dc:"Won ~55–44 over James (D hold, open seat). 4th-highest retail electricity rates in the US were a campaign issue."},
+  AZ:{gov:"Katie Hobbs (re-elected)", p:"D", flip:false, conf:true, dc:"Won ~56–43 over Biggs."},
+  VA:{gov:"Abigail Spanberger (elected 2025)", p:"D", flip:false, conf:true, dc:"Not on the 2026 ballot. Affordability and data-center cost allocation central to her agenda."},
+  GA:{gov:"Keisha Lance Bottoms", p:"D", flip:true, conf:true, dc:"Promised a temporary statewide pause on new data-center construction."},
+  WI:{gov:"David Crowley", p:"D", flip:false, conf:true, dc:"Backs a moratorium and ending the data-center sales-tax exemption."},
   IA:{gov:"Democrat (flip)", p:"D", flip:true, conf:true, dc:""},
   NV:{gov:"Democrat (flip)", p:"D", flip:true, conf:true, dc:""},
-  WI:{gov:"David Crowley", p:"D", flip:false, conf:true, dc:"Backs moratorium and ending DC sales-tax exemption."},
-  PA:{gov:"Josh Shapiro (inc.) vs. Garrity", p:"D", flip:false, conf:false, dc:"Led by double digits pre-election — confirm AP call. Filed at FERC over PJM price cap; pushing PJM governance reform."},
-  MI:{gov:"Benson (D) vs. James (R)", p:"?", flip:false, conf:false, dc:"Confirm AP call. 4th-highest retail rates in US was a Senate-race issue."},
-  AZ:{gov:"Hobbs (D, inc.) vs. Biggs (R)", p:"D", flip:false, conf:false, dc:"Hobbs led late polling — confirm AP call."},
-  VA:{gov:"Abigail Spanberger (elected 2025)", p:"D", flip:false, conf:true, dc:"Not on 2026 ballot. Affordability / DC cost allocation central to agenda."},
-  NJ:{gov:"Mikie Sherrill (elected 2025)", p:"D", flip:false, conf:true, dc:"Not on 2026 ballot. Ran on freezing utility rates; hostile to PJM status quo."},
-  IL:{gov:"Pritzker (inc.)", p:"D", flip:false, conf:false, dc:"Confirm call. State pushing for PJM exit study / resource adequacy authority."},
-  MD:{gov:"Wes Moore (inc.)", p:"D", flip:false, conf:false, dc:"Confirm call. Next Generation Energy Act — state-procured dispatchable gen."},
-  NY:{gov:"Hochul (inc.)", p:"D", flip:false, conf:false, dc:"Confirm call."}
+  KS:{gov:"Holscher (D) leads Masterson (R)", p:"?", flip:false, conf:false, dc:"Uncalled. Holscher ahead ~50.3–49.7 with ~99% counted (~7,600 votes); Masterson says results need 'another look'. Would be a D flip."},
+  AK:{gov:"Kreiss-Tomkins (D) leads on first choices", p:"?", flip:false, conf:false, dc:"Uncalled; ranked-choice tabulation pending. Would be a D flip."}
 };
 
 /* ===================== helpers ===================== */
@@ -503,7 +507,7 @@ function drawMap(){
     else if(metric==="op") sub=DC[st]?.op?fmt(DC[st].op,1):"";
     else if(metric==="pipe") sub=DC[st]?.pipe?fmt(DC[st].pipe,1):"";
     else if(metric==="g") sub=DC[st]?.g?"▲".repeat(DC[st].g):"";
-    else if(metric==="pol") sub=POL[st]?(POL[st].flip?"FLIP":(POL[st].conf?"":"tbc")):"";
+    else if(metric==="pol") sub=POL[st]?(POL[st].flip?"FLIP":(POL[st].conf?"":"OPEN")):"";
     h+=`<g class="st${st===selState?" sel":""}" data-st="${st}" tabindex="0" role="button" aria-label="${NAMES[st]}">
       <rect x="${x}" y="${y}" width="${W}" height="${W}" rx="5" fill="${f}"></rect>
       ${held?`<rect class="ring" x="${x+3.5}" y="${y+3.5}" width="${W-7}" height="${W-7}" rx="3"></rect>`:""}
@@ -517,7 +521,7 @@ function drawMap(){
     g.addEventListener("click",go); g.addEventListener("keydown",e=>{if(e.key==="Enter"||e.key===" "){e.preventDefault();go();}});
   });
   const m=METRICS[metric]; let lg="";
-  if(metric==="pol") lg=`<span><i class="sw" style="background:var(--dem)"></i>Democrat</span><span><i class="sw" style="background:var(--rep)"></i>Republican</span><span><i class="sw" style="background:var(--neutral)"></i>Too close / tbc</span><span><i class="sw" style="background:var(--s0)"></i>Not tracked</span>`;
+  if(metric==="pol") lg=`<span><i class="sw" style="background:var(--dem)"></i>Democrat</span><span><i class="sw" style="background:var(--rep)"></i>Republican</span><span><i class="sw" style="background:var(--neutral)"></i>Uncalled (8 Nov)</span><span><i class="sw" style="background:var(--s0)"></i>Not tracked</span>`;
   else if(metric==="g") lg=GROWTH.map((t,i)=>`<span><i class="sw" style="background:var(${SHADES[i+1]})"></i>${t}</span>`).join("");
   else lg=[1,2,3,4,5].map(i=>`<span><i class="sw" style="background:var(${SHADES[i]})"></i>${i===5?"≥ "+m.stops[5]:m.stops[i]+"–"+m.stops[i+1]}</span>`).join("");
   $("#legend").innerHTML=`<span class="lbl">${m.label}</span>`+lg;
@@ -545,7 +549,7 @@ function drawDrawer(){
     html+=`</tbody></table></div>`;
   }
   html+=`</div><div><h3>Politics</h3>`;
-  html+= p?`<p style="margin:6px 0">Governor: <b>${p.gov}</b> <span class="pill ${p.p==="D"?"dem":p.p==="R"?"rep":""}">${p.p}</span> ${p.flip?'<span class="pill warn">Flip</span>':""} ${p.conf?"":'<span class="pill unv">Confirm</span>'}</p><p class="note">${p.dc||""}</p>`:`<p class="note">Not on the tracked list.</p>`;
+  html+= p?`<p style="margin:6px 0">Governor: <b>${p.gov}</b> <span class="pill ${p.p==="D"?"dem":p.p==="R"?"rep":""}">${p.p}</span> ${p.flip?'<span class="pill warn">Flip</span>':""} ${p.conf?"":'<span class="pill unv">Uncalled</span>'}</p><p class="note">${p.dc||""}</p>`:`<p class="note">Not on the tracked list.</p>`;
   html+=`</div>`;
   $("#drawer").innerHTML=html;
 }
@@ -721,38 +725,52 @@ function renderPolitical(){
   const v=$("#v-political");
   const bookStates=new Set(Object.keys(BYSTATE));
   const rows=Object.entries(POL).sort((a,b)=>(BYSTATE[b[0]]?.exp||0)-(BYSTATE[a[0]]?.exp||0));
+  const flips=Object.entries(POL).filter(([,p])=>p.flip).map(([s])=>s);
   v.innerHTML=`<h2>Political</h2>
   <div class="tiles">
-    <div class="tile"><span class="lbl">House</span><span class="v">Democrats</span><span class="s">Projected majority (NBC, CNBC)</span></div>
-    <div class="tile"><span class="lbl">Senate</span><span class="v">Democrats</span><span class="s">7 seats flipped; AK and MS still uncalled</span></div>
-    <div class="tile"><span class="lbl">Governors</span><span class="v">D majority</span><span class="s">5 flips: TX, GA, OH, IA, NV. First D majority since 2010</span></div>
-    <div class="tile"><span class="lbl">Book in flipped states</span><span class="v">$${f1(["TX","GA","OH","IA","NV"].reduce((s,x)=>s+(BYSTATE[x]?.exp||0),0))}mm</span><span class="s">${["TX","GA","OH","IA","NV"].filter(x=>BYSTATE[x]).join(", ")||"None"}</span></div>
+    <div class="tile"><span class="lbl">House</span><span class="v">D 254 · R 162</span><span class="s">Democratic majority; ~19 seats uncalled (AP, 7 Nov)</span></div>
+    <div class="tile"><span class="lbl">Senate</span><span class="v">D 54 · R 44</span><span class="s">Democratic majority; MS and AK uncalled</span></div>
+    <div class="tile"><span class="lbl">Governors</span><span class="v">D majority</span><span class="s">5 flips called (TX, GA, OH, IA, NV); KS and AK could add 2</span></div>
+    <div class="tile"><span class="lbl">Book in flipped states</span><span class="v">$${fmt(flips.reduce((s,x)=>s+(BYSTATE[x]?.exp||0),0))}mm</span><span class="s">${flips.filter(x=>BYSTATE[x]).join(", ")||"None"} · term loans attributed by MW</span></div>
   </div>
+  <div class="card"><h3>Still uncalled (8 Nov)</h3><div class="scroll"><table>
+    <thead><tr><th>Race</th><th>Status</th><th>What happens next</th></tr></thead><tbody>
+      <tr><td>Mississippi Senate</td><td>Colom (D) leads Hyde-Smith (R) by a few dozen votes with &gt;95% counted</td><td class="note">No runoff: plurality wins. Litigation is likely; GOP has raised legal action.</td></tr>
+      <tr><td>Alaska Senate</td><td>Sullivan (R) now leads Peltola (D) by ~1,700 votes; ~80,000 ballots left</td><td class="note">Ranked-choice tabulation 18 Nov if no one clears 50%; certification targeted 25 Nov.</td></tr>
+      <tr><td>Kansas governor</td><td>Holscher (D) leads Masterson (R) ~50.3–49.7, ~99% counted</td><td class="note">Masterson has not conceded. Would be a sixth D flip.</td></tr>
+      <tr><td>Alaska governor</td><td>Kreiss-Tomkins (D) leads on first choices</td><td class="note">Ranked-choice count pending. Would be a seventh D flip.</td></tr>
+      <tr><td>House</td><td>~19 seats uncalled</td><td class="note">Majority not in doubt; final margin only.</td></tr>
+    </tbody></table></div>
+    <p class="note">Neither Senate race changes control: Democrats already hold 54 seats.</p></div>
   <div class="grid2">
     <div class="card prose edit">
-      <span class="lbl">High-level views · draft</span>
-      <p><b>Results:</b> Democrats took both chambers on 3 Nov 2026 and flipped five governorships. Electricity bills and data centers were a central affordability message in the battlegrounds. Data Center Watch found most winning candidates it tracked backed tighter regulation or a moratorium.</p>
+      <span class="lbl">High-level views · draft, as of 8 Nov</span>
+      <p><b>Results:</b> Democrats won both chambers on 3 Nov and a majority of governorships for the first time since 2010. Every governor's race called in the book's states went Democratic, including big wins in PA (Shapiro +22) and IL (Pritzker +23). Electricity bills and data centers were a central affordability message, and Data Center Watch found most winning candidates it tracked backed tighter regulation or a moratorium.</p>
       <p><b>What it means for the book</b></p>
       <ul>
-        <li><b>Data-center load growth slows at the state level.</b> Pauses or conditional moratoria are now likely in GA and OH, and possibly WI. Texas is the biggest swing: a Democratic governor plus SB6 large-load rules. This trims the upside case more than the base case.</li>
-        <li><b>Capacity price politics intensify.</b> The current collar runs through 2029/30. Expect governors in PA, NJ, MD, VA and IL to push for an extension, PJM governance changes and state-procured or utility-owned generation. That caps upside after 2030 but also reduces the odds of a disorderly price spike.</li>
-        <li><b>Contracted beats merchant.</b> Credits with signed co-location or PPA revenue (Talen's Susquehanna deal) gain relative value. Our merchant single-asset CCGTs in OH and PA (South Field, Trumbull, Fairview, Lackawanna) carry more policy risk.</li>
-        <li><b>Federal:</b> divided government with a Democratic Congress. Nuclear PTC (45U) and gas permitting are unlikely to be reopened. Expect FERC oversight hearings on large-load interconnection and PJM.</li>
-        <li><b>Ratings read:</b> no change to current ratings. Downside cases for OH and PA merchant names should assume capacity at $150–200/MW-day after the collar.</li>
+        <li><b>PJM states are now uniformly Democratic and focused on bills.</b> PA, NJ, MD, DE, IL and VA governors all want lower capacity costs. Expect a coordinated push to extend the PJM price collar past 2029/30, change PJM governance and add state-procured or utility-owned generation. That caps the upside case after 2030 but lowers the odds of a disorderly price spike.</li>
+        <li><b>Shapiro's margin strengthens his hand at FERC and PJM.</b> Pennsylvania is the book's largest state exposure, so his agenda matters most: price-cap extension, faster interconnection and data centers paying their own way.</li>
+        <li><b>Data-center growth slows at the state level.</b> Pauses or conditional moratoria are likely in GA and OH and possible in WI. Texas has a Democratic governor alongside SB6 large-load rules. This trims upside cases more than base cases.</li>
+        <li><b>Contracted beats merchant.</b> Talen's Susquehanna contract and Alpha Gen's SMECO PPA on Keys gain relative value. Merchant single-asset CCGTs in OH and PA (South Field, Trumbull, Fairview, Lackawanna) carry more policy risk, especially Ohio given Acton's moratorium stance.</li>
+        <li><b>Federal:</b> a Democratic Congress with a Republican president means gridlock. The nuclear PTC (45U) and gas permitting are unlikely to be reopened. Expect FERC oversight hearings on large-load interconnection and PJM.</li>
+        <li><b>Ratings read:</b> no change. Downside cases for OH and PA merchant names should assume capacity at $150–200/MW-day after the collar.</li>
       </ul>
     </div>
     <div class="card"><h3>Governors in power-relevant states</h3><div class="scroll"><table>
-      <thead><tr><th>State</th><th>Governor</th><th></th><th class="r">Book $mm</th><th>Data-center stance</th></tr></thead><tbody>
-      ${rows.map(([s,p])=>`<tr><td>${s}</td><td>${p.gov}</td><td><span class="pill ${p.p==="D"?"dem":p.p==="R"?"rep":""}">${p.p}</span> ${p.flip?'<span class="pill warn">Flip</span>':""} ${p.conf?"":'<span class="pill unv">Confirm</span>'}</td><td class="num">${bookStates.has(s)?f1(BYSTATE[s].exp):"—"}</td><td class="note">${p.dc}</td></tr>`).join("")}
+      <thead><tr><th>State</th><th>Governor</th><th></th><th class="r">Book $mm</th><th>Data-center / power stance</th></tr></thead><tbody>
+      ${rows.map(([s,p])=>`<tr><td>${s}</td><td>${p.gov}</td><td><span class="pill ${p.p==="D"?"dem":p.p==="R"?"rep":""}">${p.p==="?"?"Uncalled":p.p}</span> ${p.flip?'<span class="pill warn">Flip</span>':""}</td><td class="num">${bookStates.has(s)?fmt(BYSTATE[s].exp):"—"}</td><td class="note">${p.dc}</td></tr>`).join("")}
       </tbody></table></div>
-      <p class="note">Results are preliminary as of 6 Nov 2026. Rows marked Confirm had no final call in the sources checked; verify with AP before circulating.</p></div>
+      <p class="note">Results as of 8 Nov 2026. Vote shares are unofficial until states certify.</p></div>
   </div>
   <div class="card"><h3>Sources</h3><ul class="src">
-    <li><a href="https://www.nbcnews.com/politics/2026-election/live-blog/election-results-house-senate-trump-live-updates-rcna607376">NBC News: election results live updates</a></li>
-    <li><a href="https://www.cnbc.com/2026/11/04/2026-midterm-election-results-live-updates.html">CNBC: 2026 midterm results</a></li>
-    <li><a href="https://www.usnews.com/news/national-news/articles/2026-11-05/2026-midterm-results-which-races-are-still-undecided">US News: races still undecided</a></li>
+    <li><a href="https://www.nbcnews.com/politics/2026-elections/senate-results">NBC News: Senate results</a> · <a href="https://www.nbcnews.com/politics/2026-elections/governor-results">governor results</a> · <a href="https://www.nbcnews.com/politics/2026-elections/house-results">House results</a></li>
+    <li><a href="https://www.nbcchicago.com/news/local/election-2026-which-races-still-havent-been-called-and-what-states-flipped-seats-mississippi-alaska-election-results/4012174/">NBC Chicago: races still uncalled</a></li>
+    <li><a href="https://www.yahoo.com/news/politics/live/midterms-2026-election-results-and-latest-updates-mississippi-votes-still-being-counted-in-senate-nail-biter-after-democrats-take-control-of-congress-200037541.html">Yahoo News: Mississippi and Alaska still too close to call</a></li>
+    <li><a href="https://mississippitoday.org/2026/11/04/who-won-mississippis-midterm-senate-race-we-may-not-know-for-a-while/">Mississippi Today: Senate race and likely litigation</a></li>
+    <li><a href="https://alaskabeacon.com/2026/11/04/ranked-choice-voting-may-help-republican-us-sen-dan-sullivan-analysis-finds/">Alaska Beacon: ranked-choice analysis</a></li>
+    <li><a href="https://www.kcur.org/politics-elections-and-government/2026-11-03/kansas-election-results-2026-november-senate-governor-congress">KCUR: Kansas governor count</a></li>
+    <li><a href="https://www.nbcnews.com/politics/2026-elections/pennsylvania-governor-results">NBC News: Pennsylvania governor</a></li>
     <li><a href="https://fortune.com/2026/11/04/democrats-midterm-election-2026-anti-data-center-governors-texas-georgia-ohio-ai-infrastructure-big-tech-spending-moratorium-regulations/">Fortune: anti-data-center governors</a></li>
-    <li><a href="https://www.scrippsnews.com/politics/america-votes/voters-elected-governors-to-curb-data-centers-lowering-bills-for-gas-and-groceries-is-harder">Scripps: governors elected to curb data centers</a></li>
     <li><a href="https://abcnews.com/Technology/wireStory/data-centers-beating-midterm-elections-reckoning-ahead-tech-137902293">ABC News: data centers took a beating</a></li>
   </ul></div>`;
 }
