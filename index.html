@@ -125,6 +125,7 @@ a{color:var(--accent)}
       <button type="button" class="tab" data-v="capacity">Capacity auctions</button>
       <button type="button" class="tab" data-v="hedging">Hedging</button>
       <button type="button" class="tab" data-v="leverage">Leverage</button>
+      <button type="button" class="tab" data-v="ltv">LTV</button>
       <button type="button" class="tab" data-v="political">Political</button>
       <button type="button" class="tab" data-v="data-centers">Data centers</button>
       <button type="button" class="tab" data-v="watchlist">Watchlist</button>
@@ -139,6 +140,7 @@ a{color:var(--accent)}
   <section class="view" id="v-capacity" hidden></section>
   <section class="view" id="v-hedging" hidden></section>
   <section class="view" id="v-leverage" hidden></section>
+  <section class="view" id="v-ltv" hidden></section>
   <section class="view" id="v-political" hidden></section>
   <section class="view" id="v-data-centers" hidden></section>
   <section class="view" id="v-watchlist" hidden></section>
@@ -160,73 +162,55 @@ const BOOK = {
       {n:"TLB-1", size:842, mat:2032, sp:"S+175", src:"Talen 10-Q Q3'26 (extended from May 2030)"},
       {n:"TLB-2", size:835, mat:2031, sp:"S+175", src:"Talen 10-Q Q3'26; repriced May 2026"}],
      agency:{mc:"Ba3", mt:"Ba2", si:"BB-", sf:"BB+", rec:"1 (95%)", f:null},
-     lev:4.5, levType:"Gross", levNote:"Total debt $9.57bn (9/30/26) / 2026E adj. EBITDA midpoint $2,125mm; computed",
      policy:"Target 3.5x net debt / adj. EBITDA; company now expects to reach it in 2H27",
      debtKW:730, kwNote:"Total debt ~$9.57bn / 13.1 GW owned (10-K)",
      hedge:[80,70,35], hedgeNote:"% of expected generation (incl. nuclear PTC), Q4'26 / 2027 / 2028, at 9/30/26",
      hpolicy:"No stated target ratio found. Also monetized ~$1.5bn of 2027–29 PJM capacity cash flows (Oct 2026)",
-     ebitda:2125, ebitdaNote:"2026E adj. EBITDA midpoint ($2,050–2,200mm guidance)", debt:9570,
-     cfi:"Nuclear PTC floor (45U) + Amazon PPA at Susquehanna"},
+     ebA:2125, ebALbl:"2026E guidance midpoint", ebF:2675, ebFLbl:"2027E guidance midpoint ($2.5–2.85bn)", debt:9570,
+     mult:9.0, multWhy:"Nuclear base with contracted Amazon revenue and the 45U PTC floor; worth more than a merchant gas fleet", cfi:"Nuclear PTC floor (45U) + Amazon PPA at Susquehanna"},
     {id:"PATPOW", name:"Pathfinder Power (LS Power)", seg:"gen", fleet:true, fac:[
       {n:"7-yr TLB", size:2900, mat:2033, sp:"S+200", src:"Moody's (Oct 2026); launched at $2.5bn in Jun 2026"}],
      agency:{mc:"Ba2", mt:"Ba2", si:"BB-", sf:"BB", rec:"2 (85%)", f:null},
      debtKW:587, kwNote:"$2.9bn / 4.94 GW (peak MW)",
      hedgeNote:"Bethlehem has a 500 MW PPA with TVA through May 2028",
-     cfi:"4.9 GW: five PJM plants bought from Constellation + Brazos Valley (ERCOT)"},
+     mult:7.0, multWhy:"LS Power paid ~$5bn (~$1,150/kW) for the five PJM plants in 2026; older Siemens V84.2 units", cfi:"4.9 GW: five PJM plants bought from Constellation + Brazos Valley (ERCOT)"},
     {id:"ALPGEN", name:"Alpha Generation", seg:"gen", fleet:true, fac:[
       {n:"TLB due 2031", size:2220, mat:2031, sp:"S+175", src:"Desk (8 Nov 2026); repriced Jan 2026"},
       {n:"TLB due 2033 (May 2026 tranche)", size:650, mat:2033, sp:"S+175", src:"Desk (8 Nov 2026); fund schedules show 2033"}],
      agency:{mc:"Ba3", mt:"Ba2", si:"BB-", sf:"BB+", rec:"1 (95%)", f:null},
      debtKW:301, kwNote:"Term loans + $750mm 2034 notes ($3.62bn) / 12.0 GW",
      hedgeNote:"10-yr PPA with SMECO on Keys (500 MW capacity, 400 MW energy) from Apr 2026",
-     debt:3620, cfi:"22 gas/oil plants, 12.0 GW: PJM 50%, NYISO 28%, ISO-NE 20%, CAISO 2% (ArcLight)"},
+     debt:3620, mult:6.5, multWhy:"Diversified but older: 28% oil/gas steam, NY and New England plants worth less than PJM CCGTs", cfi:"22 gas/oil plants, 12.0 GW: PJM 50%, NYISO 28%, ISO-NE 20%, CAISO 2% (ArcLight)"},
     {id:"SOUFIE", name:"South Field Energy", seg:"gen", fleet:false, fac:[
       {n:"TLB", size:695, mat:2031, sp:"S+300", src:"Fund schedules"},
       {n:"TLC", size:43, mat:2031, sp:"S+300", src:"Fund schedules"}],
      agency:{mc:"Ba3", mt:"Ba3", si:"BB-", sf:"BB-", rec:"1+ (100%)", f:null},
-     debtKW:624, kwNote:"$738mm / 1,182 MW", cfi:"Single-asset CCGT, ATSI zone"},
+     debtKW:624, kwNote:"$738mm / 1,182 MW", mult:7.5, multWhy:"Modern 2021 CCGT in ATSI; in line with 2025–26 PJM gas deals (~$1,150–1,250/kW)", cfi:"Single-asset CCGT, ATSI zone"},
     {id:"CPPTRL", name:"Three Rivers (CPV Three Rivers LLC)", seg:"gen", fleet:false, fac:[
       {n:"TLB (Apr 2026 refi)", size:750, mat:2033, sp:"S+275", src:"Desk (8 Nov 2026); Kenon 6-K"}],
      agency:{mc:"Ba3", mt:"Ba3", si:"BB-", sf:"BB-", rec:"1+ (100%)", f:null},
-     debtKW:596, kwNote:"$750mm / 1,258 MW", cfi:"Single-asset CCGT, ComEd zone; CPV swapped out in May 2026"},
+     debtKW:596, kwNote:"$750mm / 1,258 MW", mult:8.0, multWhy:"Newest asset (2023 COD) in ComEd, which had the highest uncapped capacity price in the 2028/29 simulation", cfi:"Single-asset CCGT, ComEd zone; CPV swapped out in May 2026"},
     {id:"LAENCE", name:"Lackawanna Energy Center", seg:"gen", fleet:false, fac:[
       {n:"TLB", size:861, mat:2032, sp:"S+275", src:"Desk (8 Nov 2026); fund schedules"}],
      agency:{mc:"Ba3", mt:"B2", si:"BB-", sf:"BB-", rec:"2 (80%)", f:null},
-     debtKW:580, kwNote:"$861mm / 1,485 MW", cfi:"Single-asset CCGT, PPL zone (Invenergy / First Reserve / BlackRock)"},
-    {id:"VSTZ", name:"Vistra Zero Operating Co.", seg:"gen", fleet:true, fac:[
-      {n:"TLB", size:697, mat:2031, sp:"S+200", src:"Vistra 10-Q Q2'26 (outstanding); non-recourse to Vistra Operations"}],
-     agency:{mc:"Ba1", mt:"Baa3", si:"BBB-", sf:"BBB-", rec:"NR", f:"BB"},
-     debtKW:108, kwNote:"$697mm / 6.4 GW nuclear (term loan only)",
-     hedgeNote:"Meta contracts for 2,609 MW from the PJM nuclear plants; AWS 20-yr PPA for up to 1,200 MW from Comanche Peak",
-     cfi:"Vistra's nuclear fleet (Comanche Peak, Beaver Valley, Perry, Davis-Besse)"},
+     debtKW:580, kwNote:"$861mm / 1,485 MW", mult:7.5, multWhy:"Modern 2019 CCGT in PPL on Marcellus gas; in line with recent PJM CCGT trades", cfi:"Single-asset CCGT, PPL zone (Invenergy / First Reserve / BlackRock)"},
     {id:"CEFTB", name:"Clean Energy Future-Trumbull", seg:"gen", fleet:false, fac:[
       {n:"TLB", size:625, mat:2033, sp:"S+300", src:"Desk (8 Nov 2026); fund schedules"}],
      agency:{mc:"Ba3", mt:"Ba3", si:"BB-", sf:"BB-", rec:"2 (70%)", f:null},
      debtKW:658, kwNote:"$625mm / 950 MW",
      hpolicy:"2022 financing had a 5-yr revenue put (floor on revenue); status after the 2026 refi not found",
-     cfi:"Single-asset CCGT, ATSI zone"},
+     mult:7.5, multWhy:"Modern CCGT in ATSI; in line with recent PJM CCGT trades", cfi:"Single-asset CCGT, ATSI zone"},
     {id:"CPVGEN", name:"CPV Generation Holdings", seg:"gen", fleet:false, fac:[
       {n:"7-yr TLB (Shore + Maryland)", size:625, mat:2033, sp:"S+250", src:"OPC / CPV press release, 29 Oct 2026"}],
      agency:{mc:"Ba2", mt:"Ba2", si:"BB-", sf:"BB-", rec:null, f:null},
      policy:"Leverage-based cash sweep of 0–50%; both plants at the low end of the grid (OPC)",
      debtKW:425, kwNote:"$625mm / 1,470 MW",
      hpolicy:"CPV group hedges most near-term output: ~71% of Apr–Dec 2026 generation hedged, ~91% of capacity revenue secured (group level)",
-     cfi:"HoldCo over CPV Shore (NJ) and CPV Maryland (MD)"},
-    {id:"CTRI", name:"Centuri Group", seg:"svc", fleet:false, fac:[
-      {n:"Term loan", size:616, mat:2032, sp:"S+200", src:"Centuri 10-Q Q3'26 (outstanding at 9/27/26)"}],
-     agency:{mc:null, mt:null, si:"B+", sf:"B+", rec:"3", f:null, q:"low"},
-     lev:2.6, levType:"Net", levNote:"Net debt / adj. EBITDA at 9/27/26 (company)",
-     policy:"Low-2x by YE26; long-term goal below 2.0x (Q3'26 call). Covenant max 4.0x",
-     ebitda:295, ebitdaNote:"2026E adj. EBITDA midpoint ($290–300mm guidance)",
-     cfi:"Utility services contractor; not on the desk's ratings sheet"},
+     mult:7.0, multWhy:"2016–17 CCGTs in PSEG and Pepco zones, which trade at negative basis to West Hub", cfi:"HoldCo over CPV Shore (NJ) and CPV Maryland (MD)"},
     {id:"CPVFAI", name:"CPV Fairview", seg:"gen", fleet:false, fac:[
       {n:"TLB", size:550, mat:2031, sp:"S+250", src:"OPC/Kenon; fund schedules"}],
      agency:{mc:"Ba2", mt:"Ba2", si:"BB-", sf:"BB-", rec:"1+ (100%)", f:null},
-     debtKW:524, kwNote:"$550mm / 1,050 MW", cfi:"Single-asset CCGT, PENELEC zone"},
-    {id:"ASPTRE", name:"Asplundh Tree Expert", seg:"svc", fleet:false, fac:[
-      {n:"TLB", size:null, mat:2033, sp:"S+175", src:"Fund schedules; refinanced ~May 2026; size not found"}],
-     agency:{mc:"Ba1", mt:"Ba1", si:null, sf:null, rec:null, f:null, q:"low"},
-     cfi:"Utility vegetation management (private); not on the desk's ratings sheet"}
+     debtKW:524, kwNote:"$550mm / 1,050 MW", mult:7.5, multWhy:"Modern 2019 CCGT in PENELEC; in line with recent PJM CCGT trades", cfi:"Single-asset CCGT, PENELEC zone"}
   ],
   /* Plants: st:null = not mapped to a state. MW = ownership share where known. */
   assets: [
@@ -267,10 +251,6 @@ const BOOK = {
     {c:"ALPGEN", n:"Cos Cob", st:"CT", iso:"ISO-NE", z:"CT", tech:"CT", mw:119},
     {c:"ALPGEN", n:"Branford, Torrington, Franklin Drive", st:"CT", iso:"ISO-NE", z:"CT", tech:"CT", mw:67},
     {c:"ALPGEN", n:"Long Beach", st:"CA", iso:"CAISO", z:"SP15", tech:"CT", mw:252},
-    {c:"VSTZ", n:"Comanche Peak", st:"TX", iso:"ERCOT", z:"North", tech:"Nuclear", mw:2400},
-    {c:"VSTZ", n:"Beaver Valley", st:"PA", iso:"PJM", z:"DUQ", tech:"Nuclear", mw:1872},
-    {c:"VSTZ", n:"Perry", st:"OH", iso:"PJM", z:"ATSI", tech:"Nuclear", mw:1268},
-    {c:"VSTZ", n:"Davis-Besse", st:"OH", iso:"PJM", z:"ATSI", tech:"Nuclear", mw:894},
     {c:"SOUFIE", n:"South Field", st:"OH", iso:"PJM", z:"ATSI", tech:"CCGT", mw:1182},
     {c:"CPVFAI", n:"Fairview", st:"PA", iso:"PJM", z:"PENELEC", tech:"CCGT", mw:1050},
     {c:"CPPTRL", n:"Three Rivers", st:"IL", iso:"PJM", z:"ComEd", tech:"CCGT", mw:1258},
@@ -278,8 +258,6 @@ const BOOK = {
     {c:"CPVGEN", n:"CPV Maryland (St. Charles)", st:"MD", iso:"PJM", z:"Pepco", tech:"CCGT", mw:745},
     {c:"LAENCE", n:"Lackawanna", st:"PA", iso:"PJM", z:"PPL", tech:"CCGT", mw:1485},
     {c:"CEFTB", n:"Trumbull", st:"OH", iso:"PJM", z:"ATSI", tech:"CCGT", mw:950},
-    {c:"CTRI", n:"Utility services (US-wide)", st:null, iso:"n/a", z:"", tech:"Utility services", mw:0},
-    {c:"ASPTRE", n:"Utility services (US-wide)", st:null, iso:"n/a", z:"", tech:"Utility services", mw:0}
   ]
 };
 
@@ -293,8 +271,7 @@ const AB_RATINGS = {
     LAENCE:{cur:"B2",  fwd:"B1",  dn:"B3",   up:"BB1"},
     PATPOW:{cur:"B1",  fwd:"BB3", dn:"B3",   up:"BB2"},
     SOUFIE:{cur:"B2",  fwd:"B1",  dn:"CCC1", up:"BB3"},
-    TLN:   {cur:"BB2", fwd:"BB2", dn:"BB3",  up:"BB1"},
-    VSTZ:  {cur:"BB1", fwd:"BBB3",dn:"BB3",  up:"BBB3"}
+    TLN:   {cur:"BB2", fwd:"BB2", dn:"BB3",  up:"BB1"}
   };
 
 /* internal data removed from public build */
@@ -303,7 +280,13 @@ BOOK.credits.forEach(c=>{ if(PRIV) Object.assign(c, PRIV.credits[c.id]||{}); c.a
 BOOK.credits.forEach(c=>{ c.held = c.fac.reduce((s,f)=>s+(f.size||0),0); c.tbc = c.fac.some(f=>f.size==null);
   c.policy ??= "No public target"; c.hpolicy ??= (c.seg==="svc"?"n/a (no generation)":"No public hedge policy");
   c.levType ??= null; c.lev ??= null; c.levNote ??= "Not disclosed"; c.hedge ??= null; c.hedgeNote ??= (c.seg==="svc"?"n/a":"Not disclosed");
-  c.debtKW ??= null; c.kwNote ??= "n/a"; c.ebitda ??= null; c.ebitdaNote ??= "Not public"; c.debt ??= (c.held||null); c.ab ??= null; });
+  c.debtKW ??= null; c.kwNote ??= "n/a"; c.ebA ??= null; c.ebF ??= null; c.ebALbl ??= ""; c.ebFLbl ??= ""; c.debt ??= (c.held||null); c.ab ??= null;
+  c.pol ??= null; c.polOfficial ??= null; c.polNote ??= ""; c.mult ??= null; c.multWhy ??= "";
+  c.mw = BOOK.assets.filter(a=>a.c===c.id).reduce((s,a)=>s+a.mw,0);
+  c.levA = (c.debt&&c.ebA)? c.debt/c.ebA : null; c.levF = (c.debt&&c.ebF)? c.debt/c.ebF : null;
+  c.ebV = c.ebF||c.ebA; c.ebVLbl = c.ebF? c.ebFLbl : c.ebALbl;
+  c.ev = (c.mult&&c.ebV)? c.mult*c.ebV : null; c.ltv = (c.ev&&c.debt)? c.debt/c.ev : null;
+  c.ltvA = (c.mult&&c.ebA&&c.debt)? c.debt/(c.mult*c.ebA) : null; });
 
 /* ===== Recent facility events (public sources) ===== */
 const EVENTS = [
@@ -314,10 +297,8 @@ const EVENTS = [
   {d:"2026-05-20", c:"TLN", t:"Repriced TLB-1 ($842mm) and TLB-2 ($835mm) to S+175; TLB-1 extended from May 2030 to Nov 2032."},
   {d:"2026-05-01", lbl:"May 2026", c:"CPPTRL", t:"CPV swapped its 10% Three Rivers stake for the remaining 25% of CPV Maryland. New Three Rivers TLB (S+275, 2033) priced in April."},
   {d:"2026-10-30", c:"PATPOW", t:"Moody's assigned Ba2 CFR and Ba2 to the senior secured facility; outlook stable. Portfolio now includes Brazos Valley (606 MW, ERCOT)."},
-  {d:"2026-10-06", c:"VSTZ", t:"DOE offered Vistra a conditional loan of up to $4.2bn for uprates at Beaver Valley, Perry and Davis-Besse."},
   {d:"2026-05-15", lbl:"May 2026", c:"ALPGEN", t:"Issued a new $650mm TLB tranche and closed the Brandywine (279 MW, MD) acquisition. 10-yr SMECO PPA on Keys signed in April."},
   {d:"2026-01-23", c:"ALPGEN", t:"Repriced $2.22bn of term loans and $700mm RCF; ~$5.5mm a year of interest savings."},
-  {d:"2026-01-12", c:"CTRI", t:"Repriced term loan: SOFR margin 2.25% to 2.00%."},
   {d:"2025-10-06", c:"TLN", t:"Launched $1.2bn incremental TLB (now TLB-3, $1,191mm, S+200, 2032) to fund the Freedom and Guernsey acquisitions."}
 ];
 
@@ -489,7 +470,7 @@ function renderMapView(){
       </div>
       <div id="mapSvg"></div>
       <div class="legend" id="legend"></div>
-      <p class="note">Amber ring = a book name owns generation in the state. Exposure is each issuer's term loan size split across its plants by MW, not our holdings. $${fmt(UNALLOC)}mm (utility-services names) is not mapped to a state. Alpha Gen's NJ plants and Keys (MD) have no public MW, so they get no allocation.</p>
+      <p class="note">Amber ring = a book name owns generation in the state. Exposure is each issuer's term loan size split across its plants by MW, not our holdings. $${fmt(UNALLOC)}mm (Talen's unlisted plants) is not mapped to a state.</p>
     </div>
     <div class="card" id="drawer"></div>
   </div>`;
@@ -590,7 +571,7 @@ function renderExposure(){
       return `<tr class="grp"><td>${c.name}</td><td>${[...new Set(as.map(a=>a.st).filter(Boolean))].join(", ")||"—"}</td><td></td><td class="num">${mw?fmt(mw):"—"}</td><td class="num">${mw?"100%":""}</td><td class="num">${c.held?fmt(c.held):"tbc"}</td></tr>`+
       as.map(a=>`<tr><td>&nbsp;&nbsp;${a.n}</td><td>${a.st?a.st+" · "+a.iso+(a.z?" "+a.z:""):"—"}</td><td>${a.tech}</td><td class="num">${a.mw?fmt(a.mw):'<span class="note">MW n.f.</span>'}</td><td class="num">${mw&&a.mw?fmt(100*a.mw/mw)+"%":""}</td><td class="num">${a.exp?fmt(a.exp):"—"}</td></tr>`).join("");}).join("")}
     </tbody></table></div>
-    <p class="note">MW are each borrower's ownership share where known: Talen from its FY2025 10-K; Pathfinder and Alpha Gen from their Moody's credit opinions (Oct 2026; Pathfinder at peak MW); Vistra Zero nuclear nameplate. Plants without MW and borrowers without a public loan size get no dollar attribution. Utility-services names are not tied to a state.</p></div>`;
+    <p class="note">MW are each borrower's ownership share where known: Talen from its FY2025 10-K; Pathfinder and Alpha Gen from their Moody's credit opinions (Oct 2026; Pathfinder at peak MW). Plants without MW and borrowers without a public loan size get no dollar attribution.</p></div>`;
 }
 
 /* ===================== ratings tab ===================== */
@@ -602,22 +583,23 @@ function renderRatings(){
   const rated=BOOK.credits.filter(c=>c.ab && c.held);
   const w=rated.reduce((s,c)=>s+c.held,0)||1;
   const wavg=k=>{ if(!rated.length) return "—"; let s=0; rated.forEach(c=>s+=notch(AB2SP[c.ab[k]])*c.held); return SP2AB[RSCALE[Math.round(s/w)]]||RSCALE[Math.round(s/w)]; };
-  const vsMoodys=c=>{ if(!c.ab||!c.agency.mc) return "—"; const d=notch(MOODY[c.agency.mc]||c.agency.mc)-notch(AB2SP[c.ab.cur]); return d<0?`${-d} below`:d>0?`${d} above`:"in line"; };
-  const abCols = true ? '<th>AB current</th><th>AB forward</th><th>AB upside</th><th>AB downside</th><th>AB vs. Moody\'s CFR</th>' : '';
+  const cmp=(agency,ab)=>{ if(!ab||!agency) return "—"; const d=notch(MOODY[agency]||agency)-notch(AB2SP[ab]); return d<0?`${-d} below`:d>0?`${d} above`:"in line"; };
+  const vsMoodys=c=>cmp(c.agency.mc, c.ab&&c.ab.fwd), vsSP=c=>cmp(c.agency.si, c.ab&&c.ab.fwd);
+  const abCols = true ? '<th>AB current</th><th>AB forward</th><th>AB upside</th><th>AB downside</th><th>AB fwd vs. Moody\'s CFR</th><th>AB fwd vs. S&amp;P issuer</th>' : '';
   v.innerHTML=`<h2>Ratings</h2>
   ${true?`<div class="tiles">
     <div class="tile"><span class="lbl">AB book avg · current</span><span class="v">${wavg("cur")}</span><span class="s">Weighted by term loan size</span></div>
     <div class="tile"><span class="lbl">AB book avg · forward</span><span class="v">${wavg("fwd")}</span><span class="s">Weighted by term loan size</span></div>
     <div class="tile"><span class="lbl">AB book avg · downside</span><span class="v">${wavg("dn")}</span><span class="s">Weighted by term loan size</span></div>
-    <div class="tile"><span class="lbl">AB below Moody's CFR</span><span class="v">${BOOK.credits.filter(c=>/below/.test(vsMoodys(c))).length} of ${rated.length}</span><span class="s">Names rated on the AB sheet</span></div>
+    <div class="tile"><span class="lbl">AB forward vs. agencies</span><span class="v">${BOOK.credits.filter(c=>/below/.test(vsMoodys(c))).length} below · ${BOOK.credits.filter(c=>/above/.test(vsMoodys(c))).length} above</span><span class="s">vs. Moody's CFR. vs. S&amp;P issuer: ${BOOK.credits.filter(c=>/below/.test(vsSP(c))).length} below · ${BOOK.credits.filter(c=>/above/.test(vsSP(c))).length} above</span></div>
   </div>`:""}
   <div class="card"><div class="scroll"><table class="wrap">
     <thead><tr><th>Borrower</th><th class="r">TL $mm</th><th>Moody's CFR</th><th>Moody's facility</th><th>S&amp;P issuer</th><th>S&amp;P facility</th><th>S&amp;P recovery</th><th>Fitch</th>${abCols}</tr></thead><tbody>
     ${BOOK.credits.map(c=>{const a=c.agency||{}; const ag=r=>r?`<span class="pill ${a.q==="low"?"unv":""}">${r}</span>`:'<span class="note">—</span>';
-      const abc = true ? (c.ab?`<td>${rPill(c.ab.cur,"ab")}</td><td>${rPill(c.ab.fwd,"ab")}</td><td>${rPill(c.ab.up,"ab")}</td><td>${rPill(c.ab.dn,"ab")}</td><td class="num">${vsMoodys(c)}</td>`:'<td colspan="5" class="note">Not on the AB ratings sheet</td>') : '';
+      const abc = true ? (c.ab?`<td>${rPill(c.ab.cur,"ab")}</td><td>${rPill(c.ab.fwd,"ab")}</td><td>${rPill(c.ab.up,"ab")}</td><td>${rPill(c.ab.dn,"ab")}</td><td class="num">${vsMoodys(c)}</td><td class="num">${vsSP(c)}</td>`:'<td colspan="6" class="note">Not on the AB ratings sheet</td>') : '';
       return `<tr><td>${c.name}</td><td class="num">${c.held?fmt(c.held):"tbc"}</td><td>${ag(a.mc)}</td><td>${ag(a.mt)}</td><td>${ag(a.si)}</td><td>${ag(a.sf)}</td><td class="num">${a.rec||"—"}</td><td>${ag(a.f)}</td>${abc}</tr>`;}).join("")}
     </tbody></table></div>
-    <p class="note">Agency ratings for the power names are from the desk's Bloomberg pull (8 Nov 2026). Vistra Zero's Fitch BB is its term loan rating (Feb 2025). Centuri and Asplundh are not on that sheet: their ratings (dashed outline) come from older secondary sources and need checking. S&amp;P recovery shows the recovery rating with the estimated recovery in brackets.${true?" AB ratings use the AB scale (BB3 ≈ BB-, B1 ≈ B+, CCC1 ≈ CCC+). Averages convert to that scale and weight by term loan size.":""}</p></div>`;
+    <p class="note">Agency ratings are from the desk's Bloomberg pull (8 Nov 2026). The comparison columns use <b>AB's forward rating</b>. S&amp;P recovery shows the recovery rating with the estimated recovery in brackets. AB ratings use the AB scale (BB3 ≈ BB-, B1 ≈ B+, CCC1 ≈ CCC+); averages weight by term loan size.</p></div>`;
 }
 
 /* ===================== capacity tab ===================== */
@@ -637,16 +619,18 @@ function renderCapacity(){
   </div>
   <div class="grid2">
     <div class="card"><h3>Capacity revenue vs. EBITDA and debt</h3><p class="note">How much of each borrower's earnings and debt the PJM capacity price supports, at the $325/MW-day 2028/29 clearing price.</p><div class="scroll"><table class="wrap">
-      <thead><tr><th>Borrower</th><th class="r">PJM UCAP MW</th><th class="r">Capacity rev $mm/yr</th><th class="r">EBITDA $mm</th><th class="r">Cap. rev % EBITDA</th><th class="r">Debt $mm</th><th class="r">Cap. rev % debt</th></tr></thead><tbody>
-      ${Object.entries(byC).sort((a,b)=>b[1].rev-a[1].rev).map(([id,o])=>{const c=credit(id);
-        return `<tr><td>${c.name}</td><td class="num">${fmt(o.ucap)}</td><td class="num">${fmt(o.rev)}</td><td class="num" title="${c.ebitdaNote}">${c.ebitda?fmt(c.ebitda):'<span class="note">n.p.</span>'}</td><td class="num">${c.ebitda?fmt(100*o.rev/c.ebitda)+"%":"—"}</td><td class="num">${c.debt?fmt(c.debt):'<span class="note">tbc</span>'}</td><td class="num">${c.debt?fmt(100*o.rev/c.debt)+"%":"—"}</td></tr>`;}).join("")}
-      <tr class="grp"><td>Total PJM</td><td class="num">${fmt(totU)}</td><td class="num">${fmt(totRev)}</td><td></td><td></td><td></td><td></td></tr></tbody></table></div>
+      <thead><tr><th>Borrower</th><th class="r">PJM UCAP MW</th><th class="r">Capacity rev $mm/yr</th><th class="r">EBITDA current $mm</th><th class="r">EBITDA FY27 $mm</th><th class="r">Cap. rev % EBITDA</th><th class="r">Debt $mm</th><th class="r">Cap. rev % debt</th></tr></thead><tbody>
+      ${Object.entries(byC).sort((a,b)=>b[1].rev-a[1].rev).map(([id,o])=>{const c=credit(id); const e=c.ebV;
+        const eb=(v,l)=>v?`<span title="${l}">${fmt(v)}</span>`:'<span class="note">—</span>';
+        return `<tr><td>${c.name}</td><td class="num">${fmt(o.ucap)}</td><td class="num">${fmt(o.rev)}</td><td class="num">${eb(c.ebA,c.ebALbl)}</td><td class="num">${eb(c.ebF,c.ebFLbl)}</td><td class="num">${e?fmt(100*o.rev/e)+"%":"—"}</td><td class="num">${c.debt?fmt(c.debt):'<span class="note">tbc</span>'}</td><td class="num">${c.debt?fmt(100*o.rev/c.debt)+"%":"—"}</td></tr>`;}).join("")}
+      <tr class="grp"><td>Total PJM</td><td class="num">${fmt(totU)}</td><td class="num">${fmt(totRev)}</td><td></td><td></td><td></td><td></td><td></td></tr></tbody></table></div>
       <ul class="note" style="margin:0;padding-left:18px">
-        <li><b>Capacity revenue</b> = PJM UCAP MW × $325/MW-day × 365. UCAP = plant MW × indicative ELCC class rating (nuclear 0.95, CCGT 0.74, coal 0.83, steam 0.62, oil and peakers 0.60). It is indicative: actual cleared MW and zonal prices differ.</li>
-        <li><b>EBITDA</b>: Talen 2026E adj. EBITDA guidance midpoint.${PRIV?" "+PRIV.notes.ebitda:""} Project borrowers do not publish EBITDA ("n.p."); send compliance certificates or lender models to fill these in.</li>
-        <li><b>Debt</b>: Talen is total debt ($9.57bn at 9/30/26). Alpha Gen is ${PRIV?PRIV.notes.debt:"term loans plus the $750mm 2034 notes ($3.62bn)"}. For the project loans it is the term loan size, assumed to be their main debt.</li>
-        <li><b>Talen</b> includes Brandon Shores and Wagner, which earn RMR payments rather than BRA capacity revenue until May 2029, and Talen has already monetized ~$1.5bn of 2027–29 capacity cash flows. Its BRA revenue at risk is therefore lower than shown.</li>
-        <li><b>PJM plants only.</b> Alpha Gen's NYISO, ISO-NE and CAISO plants, Pathfinder's Brazos Valley and Vistra Zero's Comanche Peak (ERCOT) are excluded, so their capacity share of EBITDA is understated. Vistra Zero's PJM nuclear output is largely contracted to Meta. Asplundh and Centuri have no capacity revenue.</li>
+        <li><b>Capacity revenue</b> = PJM UCAP MW × $325/MW-day × 365. UCAP = plant MW × indicative ELCC class rating (nuclear 0.95, CCGT 0.74, coal 0.83, steam 0.62, oil and peakers 0.60). Indicative only: actual cleared MW and zonal prices differ.</li>
+        <li><b>Cap. rev % EBITDA</b> uses FY27 EBITDA where available, since $325 is the 2027/28–2028/29 price; otherwise current EBITDA. Hover an EBITDA figure for its period.</li>
+        <li><b>EBITDA sources:</b> Talen 2026E and 2027E guidance midpoints${PRIV?"; Alpha Gen and Pathfinder from Moody's; project names from the desk (8 Nov 2026)":"; other names are on the internal version only"}.</li>
+        <li><b>Debt</b>: Talen total debt ($9.57bn at 9/30/26); Alpha Gen term loans plus $750mm 2034 notes ($3.62bn); project names are the term loan.</li>
+        <li><b>Talen</b> includes Brandon Shores and Wagner, which earn RMR payments rather than BRA capacity revenue until May 2029, and has monetized ~$1.5bn of 2027–29 capacity cash flows, so its BRA revenue at risk is lower than shown.</li>
+        <li><b>PJM plants only.</b> Alpha Gen's NYISO, ISO-NE and CAISO plants and Pathfinder's Brazos Valley (ERCOT) are excluded, so their capacity share of EBITDA is understated.</li>
       </ul></div>
     <div class="card"><h3>PJM RTO clearing price, $/MW-day</h3>
       <svg viewBox="0 0 360 210" role="img" aria-label="PJM BRA clearing prices by delivery year">
@@ -659,28 +643,64 @@ function renderCapacity(){
 }
 
 /* ===================== hedging tab ===================== */
+const rng = r => !r ? "—" : (r[0]===r[1] ? `${r[0]}%` : `${r[0]}–${r[1]}%`);
 function renderHedging(){
   const v=$("#v-hedging");
   v.innerHTML=`<h2>Hedging</h2>
-  <div class="card"><p class="note">How much of each borrower's expected output is hedged over the next three years, and what the company says about its hedging policy. Desk test: at least 60% hedged in year 1 and 40% in year 2.</p><div class="scroll"><table class="wrap">
-      <thead><tr><th>Borrower</th><th class="r">Y1</th><th class="r">Y2</th><th class="r">Y3</th><th>Vs. desk test</th><th>What is disclosed</th><th>Policy</th></tr></thead><tbody>
-      ${BOOK.credits.map(c=>{ const h=c.hedge;
-        const st=c.seg==="svc"?'<span class="note">n/a</span>':!h?'<span class="pill unv">Not disclosed</span>':(h[0]>=60&&h[1]>=40)?'<span class="pill good">Meets</span>':h[0]>=55?'<span class="pill warn">Light</span>':'<span class="pill bad">Below</span>';
-        return `<tr><td>${c.name}</td><td class="num">${h?h[0]+"%":"—"}</td><td class="num">${h?h[1]+"%":"—"}</td><td class="num">${h?h[2]+"%":"—"}</td><td>${st}</td><td class="note" style="min-width:150px">${c.seg==="svc"?"n/a (no generation)":c.hedgeNote}</td><td class="note" style="min-width:180px"><b style="color:var(--ink);font-weight:600">${c.hpolicy}</b></td></tr>`;}).join("")}
+  <div class="card"><p class="note">Each borrower's hedging policy (target % of expected output hedged by year) and any disclosed actual hedge levels. Desk test: at least 60% hedged in year 1 and 40% in year 2, judged on the low end of each policy range.</p><div class="scroll"><table class="wrap">
+      <thead><tr><th>Borrower</th><th class="r">Policy Y1</th><th class="r">Policy Y2</th><th class="r">Policy Y3</th><th>Official?</th><th>Vs. desk test</th><th>Actual (disclosed)</th><th>Notes</th></tr></thead><tbody>
+      ${BOOK.credits.map(c=>{ const p=c.pol, h=c.hedge;
+        const lo=p?[p[0]?.[0],p[1]?.[0]]:(h?[h[0],h[1]]:null);
+        const st=!lo?'<span class="pill unv">No data</span>':(lo[0]>=60&&lo[1]>=40)?'<span class="pill good">Meets</span>':(lo[0]>=50&&lo[1]>=40)?'<span class="pill warn">Light in Y1</span>':'<span class="pill bad">Below</span>';
+        const off=c.polOfficial===true?"Yes":c.polOfficial===false?'<span class="pill warn">No, observed</span>':"—";
+        const act=h?`${h[0]}% / ${h[1]}% / ${h[2]}%`:"—";
+        const note=[c.polNote, h?c.hedgeNote:"", (!p&&!h)?c.hpolicy:(c.hedgeNote&&c.hedgeNote!=="Not disclosed"&&!h?c.hedgeNote:"")].filter(Boolean).join(". ");
+        return `<tr><td>${c.name}</td><td class="num">${rng(p&&p[0])}</td><td class="num">${rng(p&&p[1])}</td><td class="num">${rng(p&&p[2])}</td><td>${p?off:"—"}</td><td>${st}</td><td class="num">${act}</td><td class="note" style="min-width:200px">${note||(p?"":c.hpolicy)}</td></tr>`;}).join("")}
       </tbody></table></div>
-      <p class="note">Talen: Y1 = Q4 2026, Y2 = 2027, Y3 = 2028. Project-level hedge ratios are in lender compliance certificates, not public filings.</p></div>`;
+      <p class="note">Talen has no stated target; its row is judged on actual hedges (Q4'26 / 2027 / 2028). ${PRIV?"Policy ranges are from the desk (8 Nov 2026).":"Policy ranges are on the internal version only."}</p></div>`;
 }
 
 /* ===================== leverage tab ===================== */
+const xx = v => v!=null ? fmt(v,1)+"x" : "—";
 function renderLeverage(){
   const v=$("#v-leverage");
   v.innerHTML=`<h2>Leverage</h2>
-  <div class="card"><p class="note">Leverage and debt per kW for each borrower, with the leverage the company says it targets.</p><div class="scroll"><table class="wrap">
-      <thead><tr><th>Borrower</th><th class="r">Leverage</th><th>Basis</th><th class="r">Debt $/kW</th><th>Notes</th><th>Policy</th></tr></thead><tbody>
-      ${BOOK.credits.map(c=>{ const kw=c.debtKW!=null?(c.debtKW<=600?`${fmt(c.debtKW)}`:`<span style="color:var(--warn)">${fmt(c.debtKW)}</span>`):"—";
-        return `<tr><td>${c.name}</td><td class="num">${c.lev!=null?fmt(c.lev,1)+"x":"—"}</td><td class="note">${c.levType||""}</td><td class="num" title="${c.kwNote||""}">${kw}</td><td class="note" style="min-width:150px">${c.levNote}</td><td class="note" style="min-width:180px"><b style="color:var(--ink);font-weight:600">${c.policy}</b></td></tr>`;}).join("")}
+  <div class="card"><p class="note">Debt / EBITDA for each borrower, next to the business multiple we think it is worth. The gap between the two is the equity cushion in turns of EBITDA.</p><div class="scroll"><table class="wrap">
+      <thead><tr><th>Borrower</th><th class="r">Debt $mm</th><th class="r">EBITDA current</th><th class="r">Leverage current</th><th class="r">EBITDA FY27</th><th class="r">Leverage FY27</th><th class="r">Business multiple (draft)</th><th class="r">Cushion (turns)</th><th class="r">Debt $/kW</th><th>Policy</th></tr></thead><tbody>
+      ${BOOK.credits.map(c=>{ const lv=c.levF??c.levA; const cush=(c.mult&&lv!=null)?c.mult-lv:null;
+        const kw=c.debtKW!=null?(c.debtKW<=600?`${fmt(c.debtKW)}`:`<span style="color:var(--warn)">${fmt(c.debtKW)}</span>`):"—";
+        const cs=cush==null?"—":`<span style="color:var(${cush>=3.5?"--good":cush>=2.5?"--ink":"--warn"})">${fmt(cush,1)}x</span>`;
+        return `<tr><td>${c.name}</td><td class="num">${c.debt?fmt(c.debt):"—"}</td><td class="num" title="${c.ebALbl}">${c.ebA?fmt(c.ebA):"—"}</td><td class="num">${xx(c.levA)}</td><td class="num" title="${c.ebFLbl}">${c.ebF?fmt(c.ebF):"—"}</td><td class="num">${xx(c.levF)}</td><td class="num" title="${c.multWhy}">${xx(c.mult)}</td><td class="num">${cs}</td><td class="num" title="${c.kwNote}">${kw}</td><td class="note" style="min-width:180px"><b style="color:var(--ink);font-weight:600">${c.policy}</b>${c.levNote&&c.levNote!=="Not disclosed"?`<br>${c.levNote}`:""}</td></tr>`;}).join("")}
       </tbody></table></div>
-      <p class="note">Debt $/kW: Talen = total debt / 13.1 GW owned; project loans = term loan / plant MW (hover a figure for its basis). Above ~$600 is shown in amber. DSCRs and project leverage are not public; send compliance certificates to fill them in.</p></div>`;
+      <ul class="note" style="margin:0;padding-left:18px">
+        <li><b>Leverage</b> = debt / EBITDA (gross, before cash). Debt is the term loan for project names, total debt for Talen, and term loans plus 2034 notes for Alpha Gen. Hover EBITDA for its period.</li>
+        <li><b>Cushion</b> = business multiple minus leverage (FY27 where available). Green ≥ 3.5x, amber &lt; 2.5x.</li>
+        <li><b>Business multiples are Claude's drafts</b> anchored to 2025–26 PJM gas transactions (LS Power / Constellation and Talen's Freedom / Guernsey purchases, ~$1,150–1,250/kW). Replace them with the desk's view. Hover a multiple for its rationale.</li>
+        ${PRIV?"":"<li>EBITDA for the project names, Alpha Gen and Pathfinder is on the internal version only.</li>"}
+      </ul></div>`;
+}
+
+/* ===================== LTV tab ===================== */
+function renderLTV(){
+  const v=$("#v-ltv");
+  const pc = x => x==null ? "—" : `<span class="pill ${x<=0.5?"good":x<=0.65?"":"warn"}">${fmt(100*x)}%</span>`;
+  const rows=BOOK.credits.filter(c=>c.mult);
+  const tot=rows.filter(c=>c.ltv!=null), wl=tot.reduce((s,c)=>s+c.debt,0)/(tot.reduce((s,c)=>s+c.ev,0)||1);
+  v.innerHTML=`<h2>Loan to value</h2>
+  ${tot.length?`<div class="tiles">
+    <div class="tile"><span class="lbl">Book LTV</span><span class="v">${fmt(100*wl)}%</span><span class="s">Total debt / total implied EV, ${tot.length} names</span></div>
+    <div class="tile"><span class="lbl">Highest LTV</span><span class="v">${fmt(100*Math.max(...tot.map(c=>c.ltv)))}%</span><span class="s">${tot.slice().sort((a,b)=>b.ltv-a.ltv)[0].name}</span></div>
+    <div class="tile"><span class="lbl">Lowest LTV</span><span class="v">${fmt(100*Math.min(...tot.map(c=>c.ltv)))}%</span><span class="s">${tot.slice().sort((a,b)=>a.ltv-b.ltv)[0].name}</span></div>
+  </div>`:""}
+  <div class="card"><p class="note">How much of each borrower's value the debt uses up. Implied enterprise value = business multiple × EBITDA (FY27 where available). Implied EV per kW is a sense-check against what PJM gas plants have recently sold for (~$1,150–1,250/kW).</p><div class="scroll"><table class="wrap">
+      <thead><tr><th>Borrower</th><th class="r">Debt $mm</th><th class="r">EBITDA used $mm</th><th>Period</th><th class="r">Multiple (draft)</th><th class="r">Implied EV $mm</th><th class="r">LTV</th><th class="r">LTV on current EBITDA</th><th class="r">Implied EV $/kW</th><th class="r">Debt $/kW</th></tr></thead><tbody>
+      ${rows.map(c=>`<tr><td>${c.name}</td><td class="num">${c.debt?fmt(c.debt):"—"}</td><td class="num">${c.ebV?fmt(c.ebV):"—"}</td><td class="note">${c.ebVLbl||(PRIV?"":"internal only")}</td><td class="num" title="${c.multWhy}">${xx(c.mult)}</td><td class="num">${c.ev?fmt(c.ev):"—"}</td><td class="num">${pc(c.ltv)}</td><td class="num">${pc(c.ltvA)}</td><td class="num">${c.ev&&c.mw?fmt(c.ev/c.mw*1000):"—"}</td><td class="num">${c.debt&&c.mw?fmt(c.debt/c.mw*1000):"—"}</td></tr>`).join("")}
+      </tbody></table></div>
+      <p class="note">LTV pills: green ≤ 50%, neutral 50–65%, amber above 65%. Gross debt, before cash. Business multiples are Claude's drafts; hover for the rationale and replace with the desk's view.</p></div>
+  <div class="card"><h3>Multiple rationale (draft)</h3><div class="scroll"><table>
+    <thead><tr><th>Borrower</th><th class="r">Multiple</th><th>Why</th></tr></thead><tbody>
+    ${rows.map(c=>`<tr><td>${c.name}</td><td class="num">${xx(c.mult)}</td><td class="note">${c.multWhy}</td></tr>`).join("")}
+    </tbody></table></div></div>`;
 }
 
 /* ===================== political tab ===================== */
@@ -793,7 +813,6 @@ function renderWatch(){
       <li><a href="https://www.globenewswire.com/news-release/2026/05/14/3295417/0/en/talen-energy-announces-credit-facility-refinancing-transactions.html">Talen: credit facility refinancing, May 2026</a></li>
       <li><a href="https://ir.talenenergy.com/news-releases/news-release-details/talen-energy-announces-launch-12-billion-term-loan-b-financing">Talen: $1.2bn TLB launch, Oct 2025</a></li>
       <li><a href="https://www.whitecase.com/news/press-release/white-case-advises-alpha-generation-us292-billion-financing-transactions">White &amp; Case: Alpha Generation repricing</a></li>
-      <li><a href="https://www.sec.gov/Archives/edgar/data/0001981599/000198159926000089/ctri-20260628.htm">Centuri 10-Q, Q2 2026</a></li>
       <li><a href="https://www.svpglobal.com/strategic-value-partners-to-acquire-minority-stake-in-south-field-energy/">SVP: minority stake in South Field</a></li>
       <li><a href="https://cpv.com/2021/11/29/cpv-wins-2020-power-finance-risk-conventional-power-deal-of-the-year-for-1-3-billion-raise-for-three-rivers-project-adding-to-recent-list-of-honors/">CPV: Three Rivers 2020 financing</a></li>
     </ul></div>
@@ -804,7 +823,7 @@ function renderWatch(){
 }
 
 /* ===================== routing ===================== */
-const VIEWS={"map":renderMapView,"exposure":renderExposure,"ratings":renderRatings,"capacity":renderCapacity,"hedging":renderHedging,"leverage":renderLeverage,"political":renderPolitical,"data-centers":renderDC,"watchlist":renderWatch};
+const VIEWS={"map":renderMapView,"exposure":renderExposure,"ratings":renderRatings,"capacity":renderCapacity,"hedging":renderHedging,"leverage":renderLeverage,"ltv":renderLTV,"political":renderPolitical,"data-centers":renderDC,"watchlist":renderWatch};
 const rendered=new Set();
 try{ if(PRIV){ const b=document.getElementById("buildBadge"); b.textContent="Internal · includes Moody's data"; } }catch(_){}
 function show(k){
