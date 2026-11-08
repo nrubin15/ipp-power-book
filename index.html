@@ -274,9 +274,22 @@ const AB_RATINGS = {
     TLN:   {cur:"BB2", fwd:"BB2", dn:"BB3",  up:"BB1"}
   };
 
+/* Desk-provided EBITDA and hedge policies (8 Nov 2026). Public at Nathan's request (8 Nov 2026).
+   ebA = current/LTM EBITDA, ebF = FY27 EBITDA ($mm). pol = policy ranges [[Y1lo,Y1hi],[Y2lo,Y2hi],[Y3lo,Y3hi]]. */
+const DESK_DATA = {
+  ALPGEN:{ pol:[[70,90],[50,70],[40,50]], polOfficial:true },
+  PATPOW:{ pol:[[60,80],[40,60],[20,40]], polOfficial:true },
+  LAENCE:{ ebA:220, ebALbl:"LTM 2Q26", ebF:245, ebFLbl:"FY27E" },
+  CPVGEN:{ ebA:230, ebALbl:"LTM 2Q26", pol:[[50,50],[40,40],null], polOfficial:true },
+  CPPTRL:{ ebA:215, ebALbl:"LTM 2Q26", ebF:225, ebFLbl:"FY27E", pol:[[50,50],[40,40],null], polOfficial:true },
+  CPVFAI:{ ebA:230, ebALbl:"Desk figure (period not specified)", pol:[[50,50],[40,40],null], polOfficial:true },
+  CEFTB: { ebA:218, ebALbl:"LTM 2Q26", ebF:245, ebFLbl:"FY27E", pol:[[50,50],[40,40],null], polOfficial:true, polNote:"Same program as the CPV plants" },
+  SOUFIE:{ ebF:329, ebFLbl:"FY27E", pol:[[50,60],[40,50],[30,40]], polOfficial:false, polNote:"Not an official policy; observed practice" }
+};
+
 /* internal data removed from public build */
 const PRIV = (typeof PRIVATE !== "undefined") ? PRIVATE : null;
-BOOK.credits.forEach(c=>{ if(PRIV) Object.assign(c, PRIV.credits[c.id]||{}); c.ab = AB_RATINGS[c.id]||null; });
+BOOK.credits.forEach(c=>{ Object.assign(c, DESK_DATA[c.id]||{}); if(PRIV) Object.assign(c, PRIV.credits[c.id]||{}); c.ab = AB_RATINGS[c.id]||null; });
 BOOK.credits.forEach(c=>{ c.held = c.fac.reduce((s,f)=>s+(f.size||0),0); c.tbc = c.fac.some(f=>f.size==null);
   c.policy ??= "No public target"; c.hpolicy ??= (c.seg==="svc"?"n/a (no generation)":"No public hedge policy");
   c.levType ??= null; c.lev ??= null; c.levNote ??= "Not disclosed"; c.hedge ??= null; c.hedgeNote ??= (c.seg==="svc"?"n/a":"Not disclosed");
@@ -627,7 +640,7 @@ function renderCapacity(){
       <ul class="note" style="margin:0;padding-left:18px">
         <li><b>Capacity revenue</b> = PJM UCAP MW × $325/MW-day × 365. UCAP = plant MW × indicative ELCC class rating (nuclear 0.95, CCGT 0.74, coal 0.83, steam 0.62, oil and peakers 0.60). Indicative only: actual cleared MW and zonal prices differ.</li>
         <li><b>Cap. rev % EBITDA</b> uses FY27 EBITDA where available, since $325 is the 2027/28–2028/29 price; otherwise current EBITDA. Hover an EBITDA figure for its period.</li>
-        <li><b>EBITDA sources:</b> Talen 2026E and 2027E guidance midpoints${PRIV?"; Alpha Gen and Pathfinder from Moody's; project names from the desk (8 Nov 2026)":"; other names are on the internal version only"}.</li>
+        <li><b>EBITDA sources:</b> Talen 2026E and 2027E guidance midpoints; project names from the desk (8 Nov 2026)${PRIV?"; Alpha Gen and Pathfinder from Moody's":"; Alpha Gen and Pathfinder (Moody's figures) are on the internal version only"}.</li>
         <li><b>Debt</b>: Talen total debt ($9.57bn at 9/30/26); Alpha Gen term loans plus $750mm 2034 notes ($3.62bn); project names are the term loan.</li>
         <li><b>Talen</b> includes Brandon Shores and Wagner, which earn RMR payments rather than BRA capacity revenue until May 2029, and has monetized ~$1.5bn of 2027–29 capacity cash flows, so its BRA revenue at risk is lower than shown.</li>
         <li><b>PJM plants only.</b> Alpha Gen's NYISO, ISO-NE and CAISO plants and Pathfinder's Brazos Valley (ERCOT) are excluded, so their capacity share of EBITDA is understated.</li>
@@ -657,7 +670,7 @@ function renderHedging(){
         const note=[c.polNote, h?c.hedgeNote:"", (!p&&!h)?c.hpolicy:(c.hedgeNote&&c.hedgeNote!=="Not disclosed"&&!h?c.hedgeNote:"")].filter(Boolean).join(". ");
         return `<tr><td>${c.name}</td><td class="num">${rng(p&&p[0])}</td><td class="num">${rng(p&&p[1])}</td><td class="num">${rng(p&&p[2])}</td><td>${p?off:"—"}</td><td>${st}</td><td class="num">${act}</td><td class="note" style="min-width:200px">${note||(p?"":c.hpolicy)}</td></tr>`;}).join("")}
       </tbody></table></div>
-      <p class="note">Talen has no stated target; its row is judged on actual hedges (Q4'26 / 2027 / 2028). ${PRIV?"Policy ranges are from the desk (8 Nov 2026).":"Policy ranges are on the internal version only."}</p></div>`;
+      <p class="note">Talen has no stated target; its row is judged on actual hedges (Q4'26 / 2027 / 2028). Policy ranges are from the desk (8 Nov 2026).</p></div>`;
 }
 
 /* ===================== leverage tab ===================== */
@@ -676,7 +689,7 @@ function renderLeverage(){
         <li><b>Leverage</b> = debt / EBITDA (gross, before cash). Debt is the term loan for project names, total debt for Talen, and term loans plus 2034 notes for Alpha Gen. Hover EBITDA for its period.</li>
         <li><b>Cushion</b> = business multiple minus leverage (FY27 where available). Green ≥ 3.5x, amber &lt; 2.5x.</li>
         <li><b>Business multiples are Claude's drafts</b> anchored to 2025–26 PJM gas transactions (LS Power / Constellation and Talen's Freedom / Guernsey purchases, ~$1,150–1,250/kW). Replace them with the desk's view. Hover a multiple for its rationale.</li>
-        ${PRIV?"":"<li>EBITDA for the project names, Alpha Gen and Pathfinder is on the internal version only.</li>"}
+        ${PRIV?"":"<li>Alpha Gen and Pathfinder EBITDA comes from Moody's subscriber reports, so it is on the internal version only.</li>"}
       </ul></div>`;
 }
 
