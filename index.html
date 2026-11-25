@@ -1404,6 +1404,9 @@ const ZNOTE = {
  "ERCOT|West":"West Texas data center cluster: Cipher (Barber Lake, Black Pearl, Stingray) and Galaxy Helios."
 };
 let mapMode = "state", selIso = "PJM", selZone = null;
+/* Markets with no sub-zones: drill in by state instead. */
+const STATE_ZONE_ISOS = ["Southeast (non-RTO)","West (non-RTO)"];
+const zoneFor = (iso, z, st) => STATE_ZONE_ISOS.includes(iso) && st ? (NAMES[st]||st) : z;
 const ISO_AGG = {};
 const isoNode = iso => ISO_AGG[iso] ||= {ipp:0,ippMW:0,dc:0,dcMW:0,plants:[],dcs:[],zones:{}};
 const zoneNode = (o,z) => o.zones[z] ||= {ipp:0,ippMW:0,dc:0,dcMW:0,plants:[],dcs:[]};
@@ -1411,8 +1414,8 @@ BOOK.assets.forEach(a=>{ if(!a.iso||a.iso==="n/a") return; const o=isoNode(a.iso
   [o,z].forEach(n=>{ n.ipp+=a.exp||0; n.ippMW+=a.mw||0; n.plants.push(a); }); });
 DCX.forEach(r=>{ const mwT=r.sites.reduce((s,x)=>s+(x.mw||0),0);
   r.sites.forEach(x=>{ const m=DC_ZONE[r.t+"|"+x.city]; if(!m) return;
-    const alloc=r.debt?(mwT?r.debt*(x.mw||0)/mwT:r.debt/r.sites.length):0, o=isoNode(m[0]), z=zoneNode(o,m[1]);
-    [o,z].forEach(n=>{ n.dc+=alloc; n.dcMW+=x.mw||0; n.dcs.push({r,x,alloc,z:m[1]}); }); }); });
+    const alloc=r.debt?(mwT?r.debt*(x.mw||0)/mwT:r.debt/r.sites.length):0, zk=zoneFor(m[0],m[1],x.st), o=isoNode(m[0]), z=zoneNode(o,zk);
+    [o,z].forEach(n=>{ n.dc+=alloc; n.dcMW+=x.mw||0; n.dcs.push({r,x,alloc,z:zk}); }); }); });
 
 /* ===================== By ISO: zoomable geographic map (US -> ISO -> zone) ===================== */
 /* Approximate site coordinates [lat, lon], town level. */
@@ -1438,14 +1441,14 @@ const DCPT = {
  "SECMOS|Austin":[30.27,-97.74], "WULF|Barker":[43.36,-78.55], "YNDRDC|Loudoun County":[39.08,-77.64], "RPLDCI|Richland Parish":[32.42,-91.76],
  "QTSQST|Fayetteville":[33.45,-84.45], "RDMICH|Saline":[42.17,-83.78], "HUTRBA|St. Francisville":[30.78,-91.38], "HUTBPA|Nueces County":[27.80,-97.40], "TXEDCI|El Paso":[31.76,-106.49]
 };
-const ZONE_POLY_ISOS = ["PJM","NYISO","MISO"];
+const ZONE_POLY_ISOS = ["PJM","NYISO","MISO","Southeast (non-RTO)","West (non-RTO)"];
 const ISO_SHORT = {"Southeast (non-RTO)":"Southeast","West (non-RTO)":"West"};
 const ISO_COL = {"PJM":"--i1","ERCOT":"--i2","MISO":"--i3","SPP":"--i4","NYISO":"--i5","ISO-NE":"--i6","CAISO":"--i7","Southeast (non-RTO)":"--i8","West (non-RTO)":"--i9"};
 const ZNOTE_EXTRA = {"MISO|LRZ 1":"Minnesota and the Dakotas: Applied Digital's Ellendale and Harwood campuses.", "MISO|LRZ 9":"Louisiana: Meta's Richland Parish (Beignet) and Hut 8's St. Francisville.",
   "MISO|LRZ 6":"Indiana: Meridian Arc at New Lebanon.", "MISO|LRZ 7":"Michigan: Related Digital's Saline campus (Oracle).", "NYISO|Zone A":"Western New York: WULF's Barker (Lake Mariner) site.",
   "NYISO|Zone J":"New York City: Alpha Gen's Arthur Kill.", "NYISO|Zone C":"Central New York: Alpha Gen's Oswego.", "NYISO|Zone F":"Capital region: Alpha Gen's Bethlehem."};
 selIso = null;
-let GEOX = null, geoVB = [0,0,975,610], geoAnim = 0;
+let GEOX = null, geoVB = [0,0,975,610], geoAnim = 0, geoAnimT = 0;
 
 function geoInit(){
   if(GEOX) return GEOX;
@@ -1454,7 +1457,7 @@ function geoInit(){
   const key = g => GEO_ZLIST[GEO_CZ[g.id]] || "";
   const byIso = {}, byZone = {};
   geoms.forEach(g=>{ const [iso, z] = key(g).split("|"); if(!iso) return;
-    (byIso[iso] ||= []).push(g); if(z && ZONE_POLY_ISOS.includes(iso)) ((byZone[iso] ||= {})[z] ||= []).push(g); });
+    (byIso[iso] ||= []).push(g); const zk = STATE_ZONE_ISOS.includes(iso) ? NAMES[GEO_FIPS[g.id.slice(0,2)]] : z; if(zk && ZONE_POLY_ISOS.includes(iso)) ((byZone[iso] ||= {})[zk] ||= []).push(g); });
   const isoShapes = {}, zoneShapes = {};
   Object.entries(byIso).forEach(([iso, gs])=> isoShapes[iso] = topojson.merge(T, gs));
   Object.entries(byZone).forEach(([iso, zs])=>{ zoneShapes[iso] = {}; Object.entries(zs).forEach(([z, gs])=> zoneShapes[iso][z] = topojson.merge(T, gs)); });
@@ -1468,10 +1471,10 @@ function geoInit(){
   DCX.forEach(r=>{ const mwT = r.sites.reduce((s,x)=>s+(x.mw||0),0);
     r.sites.forEach(x=>{ const m = DC_ZONE[r.t+"|"+x.city], ll = DCPT[r.t+"|"+x.city]; if(!m || !ll) return; const xy = proj([ll[1], ll[0]]); if(!xy) return;
       const alloc = r.debt ? (mwT ? r.debt*(x.mw||0)/mwT : r.debt/r.sites.length) : 0;
-      pts.push({kind:"dc", iso:m[0], z:m[1], x:xy[0], y:xy[1], name:r.t, who:r.payer, mw:x.mw, val:alloc, sub:`${x.city}, ${x.st} · ${r.cat}`}); }); });
+      pts.push({kind:"dc", iso:m[0], z:zoneFor(m[0],m[1],x.st), x:xy[0], y:xy[1], name:r.t, who:r.payer, mw:x.mw, val:alloc, sub:`${x.city}, ${x.st} · ${r.cat}`}); }); });
   const allPts = [];
-  ALL_LAYERS.gas.forEach((g,i)=>allPts.push({kind:"gas", iso:g[3], z:g[4]||"Other", x:g[5], y:g[6], name:g[0], who:g[1], mw:g[7], val:g[7], sub:`${g[8]} · ${g[10]==="op"?"online "+(g[9]||"n/a"):"planned "+(g[9]||"")}${g[12]?" · AB book plant":""}`, plan:g[10]!=="op", ab:!!g[12]}));
-  ALL_LAYERS.dc.forEach((d,i)=>allPts.push({kind:"dca", iso:d[4], z:d[5]||"Other", x:d[6], y:d[7], name:d[0], who:d[1], mw:d[8]||d[9]||null, val:(d[8]||0)+(d[9]||0), sub:`${d[2]}, ${d[3]} · ${DCS_LBL[d[10]]}`, plan:d[10]!=="op"}));
+  ALL_LAYERS.gas.forEach((g,i)=>allPts.push({kind:"gas", iso:g[3], z:zoneFor(g[3],g[4]||"Other",g[2]), x:g[5], y:g[6], name:g[0], who:g[1], mw:g[7], val:g[7], sub:`${g[8]} · ${g[10]==="op"?"online "+(g[9]||"n/a"):"planned "+(g[9]||"")}${g[12]?" · AB book plant":""}`, plan:g[10]!=="op", ab:!!g[12]}));
+  ALL_LAYERS.dc.forEach((d,i)=>allPts.push({kind:"dca", iso:d[4], z:zoneFor(d[4],d[5]||"Other",d[3]), x:d[6], y:d[7], name:d[0], who:d[1], mw:d[8]||d[9]||null, val:(d[8]||0)+(d[9]||0), sub:`${d[2]}, ${d[3]} · ${DCS_LBL[d[10]]}`, plan:d[10]!=="op"}));
   GEOX = {isoShapes, zoneShapes, stateMesh, nation, path, pts, allPts};
   return GEOX;
 }
@@ -1500,6 +1503,7 @@ function geoAnimate(svg, to){
   const t0 = performance.now(), dur = 700, ease = t=>t<.5 ? 4*t*t*t : 1-Math.pow(-2*t+2,3)/2;
   const step = now=>{ const t = Math.min(1, (now-t0)/dur), e = ease(t); geoVB = from.map((v,i)=>v+(to[i]-v)*e); svg.setAttribute("viewBox", geoVB.join(" ")); if(t<1) geoAnim = requestAnimationFrame(step); };
   geoAnim = requestAnimationFrame(step);
+  clearTimeout(geoAnimT); geoAnimT = setTimeout(()=>{ cancelAnimationFrame(geoAnim); geoVB = to; svg.setAttribute("viewBox", to.join(" ")); }, dur+120);
 }
 function renderIsoPanel(){
   const b = $("#isoBody");
@@ -1554,8 +1558,8 @@ function renderIsoPanel(){
   const crumbs = [`<a href="#" data-go="us">United States</a>`];
   if(selIso) crumbs.push(selZone ? `<a href="#" data-go="iso">${selIso}</a>` : `<b>${selIso}</b>`);
   if(selZone) crumbs.push(`<b>${selZone}</b>`);
-  const zoneChips = selIso && !GEOX.zoneShapes[selIso] ? Object.keys((universe==="all"?ALL_ISO:ISO_AGG)[selIso]?.zones||{}).map(z=>`<button type="button" class="isochip ${z===selZone?"on":""}" data-z="${z}">${z}</button>`).join("") : "";
-  const hint = level==="us" ? "Click a region to zoom into that grid operator." : level==="iso" ? (GEOX.zoneShapes[selIso] ? `Click a zone to zoom in. Zones are drawn from the counties each utility serves (approximate).` : `This market has no zone map; pick a zone below to zoom to its sites.`) : "Hover a dot for details; the tables on the right list everything in this zone.";
+  const zoneChips = selIso ? Object.keys((universe==="all"?ALL_ISO:ISO_AGG)[selIso]?.zones||{}).filter(z=>!GEOX.zoneShapes[selIso]?.[z] && !(GEOX.zoneShapes[selIso] && /^(Other|Unassigned)$/.test(z))).map(z=>`<button type="button" class="isochip ${z===selZone?"on":""}" data-z="${z}">${z}</button>`).join("") : "";
+  const hint = level==="us" ? "Click a region to zoom into that grid operator." : level==="iso" ? (STATE_ZONE_ISOS.includes(selIso) ? `No sub-markets here, so it drills in by state. Click a state to zoom in.` : GEOX.zoneShapes[selIso] ? `Click a zone to zoom in. Zones are drawn from the counties each utility serves (approximate).` : `This market has no zone map; pick a zone below to zoom to its sites.`) : "Hover a dot for details; the tables on the right list everything in this zone.";
   b.innerHTML = `<div class="card geocard">
       <div class="crumbs">${crumbs.join(' <span class="sep">›</span> ')}</div>
       <p class="note">${hint}</p>
@@ -1775,8 +1779,8 @@ function allAdd(n, kind, r){
   if(kind==="gas"){ if(r[10]==="op"){ n.gasOp+=r[7]; n.nGasOp++; } else { n.gasPlan+=r[7]; n.nGasPlan++; } n.gas.push(r); }
   else { n.dc[r[10]]++; n.dcMWop+=r[8]||0; n.dcMWplan+=r[9]||0; n.dcs.push(r); }
 }
-ALL_LAYERS.gas.forEach(g=>{ allAdd(ALL_STATE[g[2]] ||= allNode(), "gas", g); const o=ALL_ISO[g[3]] ||= allNode(); allAdd(o,"gas",g); allAdd(o.zones[g[4]||"Other"] ||= allNode(),"gas",g); });
-ALL_LAYERS.dc.forEach(d=>{ allAdd(ALL_STATE[d[3]] ||= allNode(), "dc", d); const o=ALL_ISO[d[4]] ||= allNode(); allAdd(o,"dc",d); allAdd(o.zones[d[5]||"Other"] ||= allNode(),"dc",d); });
+ALL_LAYERS.gas.forEach(g=>{ allAdd(ALL_STATE[g[2]] ||= allNode(), "gas", g); const o=ALL_ISO[g[3]] ||= allNode(); allAdd(o,"gas",g); allAdd(o.zones[zoneFor(g[3],g[4]||"Other",g[2])] ||= allNode(),"gas",g); });
+ALL_LAYERS.dc.forEach(d=>{ allAdd(ALL_STATE[d[3]] ||= allNode(), "dc", d); const o=ALL_ISO[d[4]] ||= allNode(); allAdd(o,"dc",d); allAdd(o.zones[zoneFor(d[4],d[5]||"Other",d[3])] ||= allNode(),"dc",d); });
 Object.assign(METRICS, {
   allgas:{label:"Gas fleet, operating (GW)", val:s=>(ALL_STATE[s]?.gasOp||0)/1000, stops:[0,0.01,2,5,10,20]},
   allplan:{label:"Gas, planned (GW)", val:s=>(ALL_STATE[s]?.gasPlan||0)/1000, stops:[0,0.01,0.5,1.5,3,6]},
